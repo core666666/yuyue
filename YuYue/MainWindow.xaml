@@ -283,7 +283,7 @@
                         <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center"
                                     Margin="0,0,0,16">
-                            <TextBlock Text="鎴戠殑涔︽灦"
+                            <TextBlock Text="我的书架"
                                        FontSize="22"
                                        FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding StatusMessage}"
@@ -300,10 +300,10 @@
                                   Background="Transparent">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="涔﹀悕"
+                                    <GridViewColumn Header="书名"
                                                     Width="260"
                                                     DisplayMemberBinding="{Binding Title}"/>
-                                    <GridViewColumn Header="杩涘害">
+                                    <GridViewColumn Header="进度">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -325,7 +325,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="璺緞"
+                                    <GridViewColumn Header="路径"
                                                     Width="420"
                                                     DisplayMemberBinding="{Binding FilePath}"/>
                                 </GridView>
@@ -698,6 +698,16 @@
                                     BorderThickness="1"
                                     CornerRadius="6"
                                     Margin="0,0,4,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <TextBlock Text="{Binding PageContent}"
                                                FontSize="{Binding ReaderFontSize}"
@@ -710,6 +720,16 @@
                             
                             <!-- 侧边面板区域 -->
                             <StackPanel Grid.Column="1" Width="280" Margin="4,0,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
                                 <!-- 章节面板 -->
                                 <Border Background="White"
                                         BorderBrush="#BDC3C7"
@@ -827,7 +847,9 @@
                             </StackPanel>
                         </Grid>
 
+                        <!-- 伪装模式内容区域 -->
                         <Border Grid.Row="1"
+                                Panel.ZIndex="100"
                                 Background="#F7F9FC"
                                 BorderBrush="#E0E6ED"
                                 BorderThickness="1"
