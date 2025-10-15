@@ -115,10 +115,12 @@
                           Color="Black"/>
     </Window.Effect>
 
-    <Border Background="#F5F7FA"
+    <Border x:Name="MainBorder"
+            Background="#F5F7FA"
             CornerRadius="12"
             BorderThickness="1"
-            BorderBrush="#E0E6ED">
+            BorderBrush="#E0E6ED"
+            MouseMove="MainWindow_MouseMove">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>
@@ -127,7 +129,8 @@
             </Grid.RowDefinitions>
 
             <!-- Title Bar -->
-            <Border Grid.Row="0"
+            <Border x:Name="TitleBarBorder"
+                    Grid.Row="0"
                     Background="#22313F"
                     CornerRadius="12,12,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
@@ -197,7 +200,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Left Menu -->
-                <Border Grid.Column="0"
+                <Border x:Name="LeftMenuBorder"
+                        Grid.Column="0"
                         Background="#2C3E50"
                         Padding="18"
                         CornerRadius="0,0,0,12">
@@ -1250,7 +1254,8 @@
             </Grid>
 
             <!-- Status Bar -->
-            <Border Grid.Row="2"
+            <Border x:Name="StatusBarBorder"
+                    Grid.Row="2"
                     Background="#ECF0F1"
                     CornerRadius="0,0,12,12"
                     Padding="16,0">
@@ -1261,6 +1266,95 @@
                     <StackPanel Orientation="Horizontal"
                                 DockPanel.Dock="Right"><TextBlock Text="YuYue v2.0" Foreground="#95A5A6" VerticalAlignment="Center" Margin="12,0,0,0"/></StackPanel>
                 </DockPanel>
+            </Border>
+            
+            <!-- 无边框模式控制面板（鼠标悬浮显示） -->
+            <Border x:Name="BorderlessControlPanel"
+                    Grid.Row="0"
+                    Grid.RowSpan="3"
+                    Background="#CC000000"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Stretch"
+                    Padding="12,8"
+                    Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- 左侧：阅读控制 -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="◀" 
+                                Padding="8,4" 
+                                Margin="4,0"
+                                Background="#34495E"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Command="{Binding PreviousPageCommand}"
+                                ToolTip="上一页"/>
+                        <Button Content="▶" 
+                                Padding="8,4" 
+                                Margin="4,0"
+                                Background="#34495E"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Command="{Binding NextPageCommand}"
+                                ToolTip="下一页"/>
+                        <TextBlock Text="{Binding ProgressDisplay}" 
+                                   Foreground="White" 
+                                   VerticalAlignment="Center"
+                                   Margin="12,0"/>
+                        <Button Content="Aa+" 
+                                Padding="8,4" 
+                                Margin="4,0"
+                                Background="#34495E"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Command="{Binding IncreaseFontSizeCommand}"
+                                ToolTip="增大字号"/>
+                        <Button Content="Aa-" 
+                                Padding="8,4" 
+                                Margin="4,0"
+                                Background="#34495E"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Command="{Binding DecreaseFontSizeCommand}"
+                                ToolTip="减小字号"/>
+                        <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
+                            <TextBlock Text="透明度" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Slider Width="100" 
+                                    Minimum="0.4" 
+                                    Maximum="1.0" 
+                                    Value="{Binding WindowOpacity, Mode=TwoWay}"
+                                    VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                    
+                    <!-- 右侧：窗口控制 -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <CheckBox Content="置顶" 
+                                  Foreground="White" 
+                                  Margin="8,0"
+                                  IsChecked="{Binding IsWindowTopmost, Mode=TwoWay}"/>
+                        <Button Content="退出无边框" 
+                                Padding="8,4" 
+                                Margin="4,0"
+                                Background="#E74C3C"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Click="ExitBorderless_Click"
+                                ToolTip="返回正常模式"/>
+                        <Button Content="×" 
+                                Padding="12,4" 
+                                Margin="4,0"
+                                Background="#C0392B"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Click="Close_Click"
+                                ToolTip="关闭"/>
+                    </StackPanel>
+                </Grid>
             </Border>
         </Grid>
     </Border>

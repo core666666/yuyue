@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     private System.Windows.Media.Brush? _originalBackground;
     private CamouflageWindow? _camouflageWindow;
     private WindowState _stateBeforeCamouflage;
+    private System.Windows.Threading.DispatcherTimer? _borderlessHideTimer;
 
     public ICommand HideToTrayCommand { get; }
 
@@ -73,6 +74,20 @@ public partial class MainWindow : Window
         _originalBackground = Background;
         _cachedShadowEffect = Effect;
         ApplyBorderless();
+        
+        // 初始化无边框模式的鼠标悬浮计时器
+        _borderlessHideTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(2)
+        };
+        _borderlessHideTimer.Tick += (s, e) =>
+        {
+            if (_viewModel.IsBorderless)
+            {
+                BorderlessControlPanel.Visibility = Visibility.Collapsed;
+                _borderlessHideTimer.Stop();
+            }
+        };
 
         _hwndSource.AddHook(WndProc);
         _hotKeyService.Initialize(_hwndSource.Handle);
@@ -208,8 +223,28 @@ public partial class MainWindow : Window
     {
         if (_viewModel.IsBorderless)
         {
-            WindowStyle = WindowStyle.None;
-            ResizeMode = ResizeMode.CanResizeWithGrip;
+            // 无边框模式：只显示内容，隐藏标题栏和边框
+            // 注意：AllowsTransparency 和 WindowStyle 在 XAML 中已设置，不能在运行时更改
+            ResizeMode = ResizeMode.NoResize;
+            Background = System.Windows.Media.Brushes.Transparent;
+            Effect = null;
+            
+            // 隐藏标题栏和侧边栏
+            TitleBarBorder.Visibility = Visibility.Collapsed;
+            LeftMenuBorder.Visibility = Visibility.Collapsed;
+            StatusBarBorder.Visibility = Visibility.Collapsed;
+            MainBorder.CornerRadius = new CornerRadius(0);
+            MainBorder.BorderThickness = new Thickness(0);
+            MainBorder.Background = System.Windows.Media.Brushes.Transparent;
+            
+            // 显示无边框控制面板（初始隐藏，鼠标悬浮显示）
+            BorderlessControlPanel.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            // 有边框模式：显示所有UI元素
+            ResizeMode = ResizeMode.CanResize;
+            
             if (_originalBackground is not null)
             {
                 Background = _originalBackground;
@@ -219,13 +254,30 @@ public partial class MainWindow : Window
             {
                 Effect = _cachedShadowEffect;
             }
+            
+            // 显示标题栏和侧边栏
+            TitleBarBorder.Visibility = Visibility.Visible;
+            LeftMenuBorder.Visibility = Visibility.Visible;
+            StatusBarBorder.Visibility = Visibility.Visible;
+            MainBorder.CornerRadius = new CornerRadius(12);
+            MainBorder.BorderThickness = new Thickness(1);
+            MainBorder.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF5, 0xF7, 0xFA));
+            
+            // 隐藏无边框控制面板
+            BorderlessControlPanel.Visibility = Visibility.Collapsed;
         }
-        else
+    }
+    
+    private void MainWindow_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (_viewModel.IsBorderless)
         {
-            WindowStyle = WindowStyle.SingleBorderWindow;
-            ResizeMode = ResizeMode.CanResize;
-            Effect = null;
-            Background = System.Windows.SystemColors.WindowBrush;
+            // 鼠标移动时显示控制面板
+            BorderlessControlPanel.Visibility = Visibility.Visible;
+            
+            // 重置隐藏计时器
+            _borderlessHideTimer?.Stop();
+            _borderlessHideTimer?.Start();
         }
     }
 
@@ -324,5 +376,10 @@ public partial class MainWindow : Window
     {
         // 伪装窗口关闭时，恢复主窗口
         _viewModel.IsCamouflageMode = false;
+    }
+    
+    private void ExitBorderless_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.IsBorderless = false;
     }
 }
