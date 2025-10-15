@@ -36,7 +36,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        _viewModel = new MainViewModel(new LibraryService(), new TextContentService());
+        _viewModel = new MainViewModel(
+            new LibraryService(), 
+            new TextContentService(),
+            new ChapterService(),
+            new ReadingTimerService());
         DataContext = _viewModel;
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
 

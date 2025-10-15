@@ -28,9 +28,12 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly LibraryService _libraryService;
     private readonly TextContentService _textContentService;
+    private readonly ChapterService _chapterService;
+    private readonly ReadingTimerService _timerService;
 
     private string _fullContent = string.Empty;
     private Book? _currentBook;
+    private System.Windows.Threading.DispatcherTimer? _autoPageTimer;
 
     private static readonly SolidColorBrush LightReaderBackground = new(MediaColor.FromRgb(0xFB, 0xFC, 0xFE));
     private static readonly SolidColorBrush DarkReaderBackground = new(MediaColor.FromRgb(0x1E, 0x25, 0x33));
@@ -50,12 +53,16 @@ public partial class MainViewModel : ObservableObject
     private const double MaxFontSize = 36;
     private const double FontSizeStep = 1.0;
 
-    public MainViewModel(LibraryService libraryService, TextContentService textContentService)
+    public MainViewModel(LibraryService libraryService, TextContentService textContentService, 
+        ChapterService chapterService, ReadingTimerService timerService)
     {
         _libraryService = libraryService;
         _textContentService = textContentService;
+        _chapterService = chapterService;
+        _timerService = timerService;
         readerLineHeight = Math.Round(DefaultFontSize * 1.6, 1);
         InitializeCamouflageTemplates();
+        InitializeThemes();
     }
 
     #region 公共属性
@@ -120,6 +127,61 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isBorderless = true;
+    
+    // 高级阅读功能
+    [ObservableProperty]
+    private bool isImmersiveMode;
+    
+    [ObservableProperty]
+    private int columnCount = 1;
+    
+    [ObservableProperty]
+    private double paragraphSpacing = 8;
+    
+    [ObservableProperty]
+    private double firstLineIndent = 32;
+    
+    [ObservableProperty]
+    private bool enableFirstLineIndent = true;
+    
+    [ObservableProperty]
+    private ObservableCollection<ReadingTheme> themes = new();
+    
+    [ObservableProperty]
+    private ReadingTheme? selectedTheme;
+    
+    [ObservableProperty]
+    private bool isAutoPageEnabled;
+    
+    [ObservableProperty]
+    private int autoPageInterval = 10;
+    
+    [ObservableProperty]
+    private ObservableCollection<Chapter> chapters = new();
+    
+    [ObservableProperty]
+    private Chapter? selectedChapter;
+    
+    [ObservableProperty]
+    private ObservableCollection<Bookmark> bookmarks = new();
+    
+    [ObservableProperty]
+    private bool isTimerRunning;
+    
+    [ObservableProperty]
+    private string timerDisplay = "00:00:00";
+    
+    [ObservableProperty]
+    private int todayReadingMinutes;
+    
+    [ObservableProperty]
+    private bool showChapterPanel;
+    
+    [ObservableProperty]
+    private bool showBookmarkPanel;
+    
+    [ObservableProperty]
+    private bool showStatisticsPanel;
 
     public string CamouflageStatus => SelectedCamouflage is null
         ? "请选择伪装模板"
@@ -136,6 +198,9 @@ public partial class MainViewModel : ObservableObject
     public double ProgressPercentage => TotalLength == 0
         ? 0
         : Math.Clamp(Math.Round((double)CurrentOffset / TotalLength * 100, 1), 0, 100);
+    
+    public Brush CurrentBackground => SelectedTheme?.BackgroundBrush ?? ReaderBackground;
+    public Brush CurrentForeground => SelectedTheme?.ForegroundBrush ?? ReaderForeground;
 
     #endregion
 
@@ -454,9 +519,24 @@ public partial class MainViewModel : ObservableObject
                 CurrentOffset = Math.Clamp(book.CurrentOffset, 0, Math.Max(TotalLength - 1, 0));
                 UpdatePageContent();
             }
+            
+            // 提取章节
+            if (book.Chapters.Count == 0)
+            {
+                book.Chapters = _chapterService.ExtractChapters(_fullContent);
+            }
+            Chapters = new ObservableCollection<Chapter>(book.Chapters);
+            
+            // 加载书签
+            Bookmarks = new ObservableCollection<Bookmark>(book.Bookmarks);
+            
+            // 启动计时器
+            _timerService.Start(book.TotalReadingMinutes);
+            IsTimerRunning = true;
+            StartTimerDisplay();
 
             ActiveSection = MainSection.Reader;
-            StatusMessage = $"正在阅读《{book.Title}》。";
+            StatusMessage = $"正在阅读《{book.Title}》（共{Chapters.Count}章）";
             await SaveCurrentProgressAsync();
         }
         catch (Exception ex)
@@ -536,6 +616,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task BackToBookshelfAsync()
     {
+        // 保存阅读时长
+        if (_currentBook != null && IsTimerRunning)
+        {
+            _currentBook.TotalReadingMinutes = _timerService.Stop();
+            IsTimerRunning = false;
+        }
+        
         await SaveCurrentProgressAsync();
         ActiveSection = MainSection.Bookshelf;
         StatusMessage = "返回书架";
@@ -719,4 +806,272 @@ public partial class MainViewModel : ObservableObject
         SelectedCamouflage = CamouflageTemplates.FirstOrDefault();
         OnPropertyChanged(nameof(CamouflageStatus));
     }
+    
+    private void InitializeThemes()
+    {
+        Themes = new ObservableCollection<ReadingTheme>
+        {
+            ThemePresets.Light,
+            ThemePresets.Dark,
+            ThemePresets.Sepia,
+            ThemePresets.Green,
+            ThemePresets.Blue,
+            ThemePresets.Pink,
+            ThemePresets.Gray,
+            ThemePresets.Amber
+        };
+        SelectedTheme = Themes[0];
+    }
+    
+    #region 高级阅读功能
+    
+    // 极简/沉浸模式
+    [RelayCommand]
+    private void ToggleImmersiveMode()
+    {
+        IsImmersiveMode = !IsImmersiveMode;
+        StatusMessage = IsImmersiveMode ? "已进入沉浸模式" : "已退出沉浸模式";
+    }
+    
+    // 多栏排版
+    [RelayCommand]
+    private void SetColumnCount(string count)
+    {
+        if (int.TryParse(count, out var c) && c >= 1 && c <= 3)
+        {
+            ColumnCount = c;
+            StatusMessage = $"已切换到{c}栏排版";
+        }
+    }
+    
+    // 主题切换
+    partial void OnSelectedThemeChanged(ReadingTheme? value)
+    {
+        OnPropertyChanged(nameof(CurrentBackground));
+        OnPropertyChanged(nameof(CurrentForeground));
+        if (value != null)
+        {
+            StatusMessage = $"已切换到{value.Name}主题";
+        }
+    }
+    
+    [RelayCommand]
+    private void NextTheme()
+    {
+        if (Themes.Count == 0) return;
+        var currentIndex = SelectedTheme == null ? -1 : Themes.IndexOf(SelectedTheme);
+        var nextIndex = (currentIndex + 1) % Themes.Count;
+        SelectedTheme = Themes[nextIndex];
+    }
+    
+    // 自动翻页
+    [RelayCommand]
+    private void ToggleAutoPage()
+    {
+        IsAutoPageEnabled = !IsAutoPageEnabled;
+        
+        if (IsAutoPageEnabled)
+        {
+            _autoPageTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(AutoPageInterval)
+            };
+            _autoPageTimer.Tick += (s, e) => NextPage();
+            _autoPageTimer.Start();
+            StatusMessage = $"已开启自动翻页（{AutoPageInterval}秒/页）";
+        }
+        else
+        {
+            _autoPageTimer?.Stop();
+            _autoPageTimer = null;
+            StatusMessage = "已关闭自动翻页";
+        }
+    }
+    
+    partial void OnAutoPageIntervalChanged(int value)
+    {
+        if (_autoPageTimer != null && value >= 3 && value <= 60)
+        {
+            _autoPageTimer.Interval = TimeSpan.FromSeconds(value);
+        }
+    }
+    
+    // 章节跳转
+    [RelayCommand]
+    private void JumpToChapter(Chapter? chapter)
+    {
+        if (chapter == null || _fullContent.Length == 0) return;
+        
+        CurrentOffset = Math.Clamp(chapter.StartOffset, 0, Math.Max(TotalLength - 1, 0));
+        UpdatePageContent();
+        StatusMessage = $"已跳转到：{chapter.Title}";
+    }
+    
+    [RelayCommand]
+    private void ToggleChapterPanel()
+    {
+        ShowChapterPanel = !ShowChapterPanel;
+        if (ShowChapterPanel)
+        {
+            ShowBookmarkPanel = false;
+            ShowStatisticsPanel = false;
+        }
+    }
+    
+    [RelayCommand]
+    private void PreviousChapter()
+    {
+        if (Chapters.Count == 0) return;
+        
+        var current = Chapters.FirstOrDefault(c => c.StartOffset <= CurrentOffset);
+        if (current == null)
+        {
+            JumpToChapter(Chapters[0]);
+            return;
+        }
+        
+        var index = Chapters.IndexOf(current);
+        if (index > 0)
+        {
+            JumpToChapter(Chapters[index - 1]);
+        }
+    }
+    
+    [RelayCommand]
+    private void NextChapter()
+    {
+        if (Chapters.Count == 0) return;
+        
+        var current = Chapters.LastOrDefault(c => c.StartOffset <= CurrentOffset);
+        if (current == null)
+        {
+            JumpToChapter(Chapters[0]);
+            return;
+        }
+        
+        var index = Chapters.IndexOf(current);
+        if (index < Chapters.Count - 1)
+        {
+            JumpToChapter(Chapters[index + 1]);
+        }
+    }
+    
+    // 书签系统
+    [RelayCommand]
+    private void AddBookmark()
+    {
+        if (_currentBook == null) return;
+        
+        var bookmark = new Bookmark
+        {
+            Name = $"书签 {_currentBook.Bookmarks.Count + 1}",
+            Offset = CurrentOffset,
+            CreatedUtc = DateTime.UtcNow
+        };
+        
+        _currentBook.Bookmarks.Add(bookmark);
+        Bookmarks = new ObservableCollection<Bookmark>(_currentBook.Bookmarks);
+        StatusMessage = $"已添加书签：{bookmark.Name}";
+    }
+    
+    [RelayCommand]
+    private void JumpToBookmark(Bookmark? bookmark)
+    {
+        if (bookmark == null) return;
+        
+        CurrentOffset = Math.Clamp(bookmark.Offset, 0, Math.Max(TotalLength - 1, 0));
+        UpdatePageContent();
+        StatusMessage = $"已跳转到书签：{bookmark.Name}";
+    }
+    
+    [RelayCommand]
+    private void DeleteBookmark(Bookmark? bookmark)
+    {
+        if (bookmark == null || _currentBook == null) return;
+        
+        _currentBook.Bookmarks.Remove(bookmark);
+        Bookmarks = new ObservableCollection<Bookmark>(_currentBook.Bookmarks);
+        StatusMessage = $"已删除书签：{bookmark.Name}";
+    }
+    
+    [RelayCommand]
+    private void ToggleBookmarkPanel()
+    {
+        ShowBookmarkPanel = !ShowBookmarkPanel;
+        if (ShowBookmarkPanel)
+        {
+            ShowChapterPanel = false;
+            ShowStatisticsPanel = false;
+        }
+    }
+    
+    // 专注计时
+    [RelayCommand]
+    private void ToggleTimer()
+    {
+        if (IsTimerRunning)
+        {
+            _timerService.Pause();
+            IsTimerRunning = false;
+            StatusMessage = "已暂停计时";
+        }
+        else
+        {
+            var previousMinutes = _currentBook?.TotalReadingMinutes ?? 0;
+            _timerService.Start(previousMinutes);
+            IsTimerRunning = true;
+            StatusMessage = "已开始计时";
+            StartTimerDisplay();
+        }
+    }
+    
+    private void StartTimerDisplay()
+    {
+        var displayTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        displayTimer.Tick += (s, e) =>
+        {
+            if (!IsTimerRunning)
+            {
+                displayTimer.Stop();
+                return;
+            }
+            var elapsed = _timerService.CurrentSessionTime;
+            TimerDisplay = $"{(int)elapsed.TotalHours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+        };
+        displayTimer.Start();
+    }
+    
+    [RelayCommand]
+    private void ResetTimer()
+    {
+        _timerService.Reset();
+        IsTimerRunning = false;
+        TimerDisplay = "00:00:00";
+        StatusMessage = "已重置计时器";
+    }
+    
+    [RelayCommand]
+    private void ToggleStatisticsPanel()
+    {
+        ShowStatisticsPanel = !ShowStatisticsPanel;
+        if (ShowStatisticsPanel)
+        {
+            ShowChapterPanel = false;
+            ShowBookmarkPanel = false;
+            UpdateStatistics();
+        }
+    }
+    
+    private void UpdateStatistics()
+    {
+        if (_currentBook != null)
+        {
+            TodayReadingMinutes = _currentBook.TotalReadingMinutes;
+        }
+    }
+    
+    #endregion
 }

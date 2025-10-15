@@ -137,10 +137,10 @@
                                 Orientation="Horizontal"
                                 Margin="18,0,0,0"
                                 VerticalAlignment="Center">
-                        <TextBlock Text="馃悷"
+                        <TextBlock Text="🐟"
                                    FontSize="18"
                                    Margin="0,0,8,0"/>
-                        <TextBlock Text="楸奸槄"
+                        <TextBlock Text="鱼阅"
                                    FontSize="14"
                                    FontWeight="SemiBold"
                                    Foreground="White"
@@ -517,6 +517,127 @@
                                             </Style>
                                         </Button.Style>
                                     </Button>
+                                    <!-- 新增高级功能按钮 -->
+                                    <ComboBox ItemsSource="{Binding Themes}"
+                                              SelectedItem="{Binding SelectedTheme}"
+                                              DisplayMemberPath="Name"
+                                              Width="100"
+                                              Margin="8,0,0,0"
+                                              ToolTip="选择主题">
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
+                                    <Button Content="📖章节"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding ToggleChapterPanelCommand}"
+                                            ToolTip="章节导航">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="🔖书签"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding ToggleBookmarkPanelCommand}"
+                                            ToolTip="书签管理">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="📊统计"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding ToggleStatisticsPanelCommand}"
+                                            ToolTip="阅读统计">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <ToggleButton Content="⏱️计时"
+                                                  Margin="8,0,0,0"
+                                                  Padding="12,4"
+                                                  IsChecked="{Binding IsTimerRunning}"
+                                                  Command="{Binding ToggleTimerCommand}"
+                                                  ToolTip="阅读计时">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
+                                    <TextBlock Text="{Binding TimerDisplay}"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center"
+                                               FontFamily="Consolas"
+                                               FontSize="14"
+                                               Foreground="#2C3E50">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <ToggleButton Content="🎯沉浸"
+                                                  Margin="8,0,0,0"
+                                                  Padding="12,4"
+                                                  IsChecked="{Binding IsImmersiveMode}"
+                                                  ToolTip="沉浸模式 (F11)">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal"
@@ -564,20 +685,147 @@
                             </Grid>
                         </Grid>
 
-                        <Border Grid.Row="1"
-                                Background="{Binding ReaderBackground}"
-                                BorderBrush="#E0E6ED"
-                                BorderThickness="1"
-                                CornerRadius="6">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <TextBlock Text="{Binding PageContent}"
-                                           FontSize="{Binding ReaderFontSize}"
-                                           Foreground="{Binding ReaderForeground}"
-                                           TextWrapping="Wrap"
-                                           LineHeight="{Binding ReaderLineHeight}"
-                                           Padding="24"/>
-                            </ScrollViewer>
-                        </Border>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- 阅读内容区域 -->
+                            <Border Grid.Column="0"
+                                    Background="{Binding CurrentBackground}"
+                                    BorderBrush="#E0E6ED"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Margin="0,0,4,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <TextBlock Text="{Binding PageContent}"
+                                               FontSize="{Binding ReaderFontSize}"
+                                               Foreground="{Binding CurrentForeground}"
+                                               TextWrapping="Wrap"
+                                               LineHeight="{Binding ReaderLineHeight}"
+                                               Padding="24"/>
+                                </ScrollViewer>
+                            </Border>
+                            
+                            <!-- 侧边面板区域 -->
+                            <StackPanel Grid.Column="1" Width="280" Margin="4,0,0,0">
+                                <!-- 章节面板 -->
+                                <Border Background="White"
+                                        BorderBrush="#BDC3C7"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="16"
+                                        Margin="0,0,0,8"
+                                        Visibility="{Binding ShowChapterPanel, Converter={StaticResource BoolConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="📖 章节目录" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
+                                        <ListBox ItemsSource="{Binding Chapters}"
+                                                 SelectedItem="{Binding SelectedChapter}"
+                                                 MaxHeight="300"
+                                                 BorderThickness="0">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Title}" 
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Cursor="Hand">
+                                                        <TextBlock.InputBindings>
+                                                            <MouseBinding MouseAction="LeftClick"
+                                                                          Command="{Binding DataContext.JumpToChapterCommand, 
+                                                                          RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                          CommandParameter="{Binding}"/>
+                                                        </TextBlock.InputBindings>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                            <Button Content="上一章" Command="{Binding PreviousChapterCommand}" 
+                                                    Padding="10,6" Margin="0,0,4,0"/>
+                                            <Button Content="下一章" Command="{Binding NextChapterCommand}"
+                                                    Padding="10,6" Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- 书签面板 -->
+                                <Border Background="White"
+                                        BorderBrush="#BDC3C7"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="16"
+                                        Margin="0,0,0,8"
+                                        Visibility="{Binding ShowBookmarkPanel, Converter={StaticResource BoolConverter}}">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,12">
+                                            <TextBlock Text="🔖 我的书签" FontSize="16" FontWeight="Bold"/>
+                                            <Button Content="+" HorizontalAlignment="Right"
+                                                    Command="{Binding AddBookmarkCommand}"
+                                                    Width="30" Height="30"/>
+                                        </Grid>
+                                        <ListBox ItemsSource="{Binding Bookmarks}"
+                                                 MaxHeight="300"
+                                                 BorderThickness="0">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Cursor="Hand">
+                                                            <StackPanel.InputBindings>
+                                                                <MouseBinding MouseAction="LeftClick"
+                                                                              Command="{Binding DataContext.JumpToBookmarkCommand,
+                                                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                              CommandParameter="{Binding}"/>
+                                                            </StackPanel.InputBindings>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding CreatedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                                       FontSize="10" Foreground="Gray"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="×" 
+                                                                Command="{Binding DataContext.DeleteBookmarkCommand,
+                                                                RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                Width="24" Height="24"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- 统计面板 -->
+                                <Border Background="White"
+                                        BorderBrush="#BDC3C7"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="16"
+                                        Visibility="{Binding ShowStatisticsPanel, Converter={StaticResource BoolConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="📊 阅读统计" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
+                                        <StackPanel Margin="0,8">
+                                            <TextBlock Text="今日阅读时长" Foreground="Gray" FontSize="12"/>
+                                            <TextBlock Text="{Binding TodayReadingMinutes, StringFormat='{}{0} 分钟'}"
+                                                       FontSize="24" FontWeight="Bold" Foreground="#3498DB"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="0,8">
+                                            <TextBlock Text="阅读进度" Foreground="Gray" FontSize="12"/>
+                                            <ProgressBar Height="20" Maximum="100" 
+                                                         Value="{Binding ProgressPercentage, Mode=OneWay}"/>
+                                            <TextBlock Text="{Binding ProgressPercentage, StringFormat='{}{0:F1}%'}"
+                                                       HorizontalAlignment="Center" Margin="0,4"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="0,8">
+                                            <TextBlock Text="章节进度" Foreground="Gray" FontSize="12"/>
+                                            <TextBlock Text="{Binding Chapters.Count, StringFormat='共 {0} 章'}"
+                                                       FontSize="16"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
 
                         <Border Grid.Row="1"
                                 Background="#F7F9FC"
