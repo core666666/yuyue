@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    
+    <!-- 应用信息 -->
+    <AssemblyName>YuYue</AssemblyName>
+    <RootNamespace>YuYue</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>YuYue Team</Authors>
+    <Company>YuYue</Company>
+    <Product>鱼阅 - 碎片化阅读器</Product>
+    <Description>一款低打扰的桌面阅读器，专为碎片化小说阅读设计</Description>
+    
+    <!-- 自包含发布配置 -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    
+    <!-- 图标和资源（后续添加） -->
+    <!-- <ApplicationIcon>Resources\icon.ico</ApplicationIcon> -->
+    <!-- <ApplicationManifest>app.manifest</ApplicationManifest> -->
+    
+    <!-- 高DPI支持 -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <!-- NuGet 包引用 -->
+  <ItemGroup>
+    <!-- MVVM 框架 -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    
+    <!-- 数据库 -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    
+    <!-- HTML 解析 -->
+    <PackageReference Include="AngleSharp" Version="1.1.2" />
+    
+    <!-- JSON 处理 -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    
+    <!-- 日志 -->
+    <PackageReference Include="Serilog" Version="4.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>
