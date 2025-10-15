@@ -9,6 +9,7 @@ using System.Windows.Media.Effects;
 using CommunityToolkit.Mvvm.Input;
 using YuYue.Services;
 using YuYue.ViewModels;
+using YuYue.Views;
 
 namespace YuYue;
 
@@ -29,6 +30,8 @@ public partial class MainWindow : Window
     private int _bossKeyHotKeyId;
     private Effect? _cachedShadowEffect;
     private System.Windows.Media.Brush? _originalBackground;
+    private CamouflageWindow? _camouflageWindow;
+    private WindowState _stateBeforeCamouflage;
 
     public ICommand HideToTrayCommand { get; }
 
@@ -119,6 +122,10 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(MainViewModel.IsBorderless))
         {
             Dispatcher.Invoke(ApplyBorderless);
+        }
+        else if (e.PropertyName == nameof(MainViewModel.IsCamouflageMode))
+        {
+            Dispatcher.Invoke(HandleCamouflageModeChanged);
         }
     }
 
@@ -250,5 +257,44 @@ public partial class MainWindow : Window
         }
 
         return IntPtr.Zero;
+    }
+
+    private void HandleCamouflageModeChanged()
+    {
+        if (_viewModel.IsCamouflageMode)
+        {
+            // 进入伪装模式：最小化主窗口，显示伪装窗口
+            _stateBeforeCamouflage = WindowState;
+            WindowState = WindowState.Minimized;
+            
+            if (_camouflageWindow == null || !_camouflageWindow.IsLoaded)
+            {
+                _camouflageWindow = new CamouflageWindow(_viewModel);
+                _camouflageWindow.Closed += CamouflageWindow_Closed;
+            }
+            
+            _camouflageWindow.Show();
+            _camouflageWindow.Activate();
+        }
+        else
+        {
+            // 退出伪装模式：关闭伪装窗口，恢复主窗口
+            if (_camouflageWindow != null)
+            {
+                _camouflageWindow.Closed -= CamouflageWindow_Closed;
+                _camouflageWindow.Close();
+                _camouflageWindow = null;
+            }
+            
+            WindowState = _stateBeforeCamouflage;
+            Show();
+            Activate();
+        }
+    }
+
+    private void CamouflageWindow_Closed(object? sender, EventArgs e)
+    {
+        // 伪装窗口关闭时，恢复主窗口
+        _viewModel.IsCamouflageMode = false;
     }
 }
