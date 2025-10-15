@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:models="clr-namespace:YuYue.Models"
         mc:Ignorable="d"
-        Title="楸奸槄 - 纰庣墖鍖栭槄璇诲櫒"
+        Title="鱼阅 - 碎片化阅读器"
         Height="720"
         Width="1200"
         MinHeight="600"
@@ -200,7 +200,7 @@
                         <TextBlock Text="沉浸阅读"
                                    Foreground="#BDC3C7"
                                    FontSize="12"/>
-                        <TextBlock Text="��ҳС˵��С��"
+                        <TextBlock Text="碎片化小说阅读"
                                    Foreground="White"
                                    FontSize="18"
                                    FontWeight="Bold"
@@ -1172,15 +1172,7 @@
                                VerticalAlignment="Center"
                                Foreground="#7F8C8D"/>
                     <StackPanel Orientation="Horizontal"
-                                DockPanel.Dock="Right">
-                        <TextBlock Text="蹇嵎閿? Ctrl+O 瀵煎叆 | Ctrl+S 淇濆瓨 | Ctrl+T 澶滈棿妯″紡"
-                                   Foreground="#95A5A6"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Text="鐗堟湰 v0.1.0"
-                                   Margin="12,0,0,0"
-                                   Foreground="#95A5A6"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
+                                DockPanel.Dock="Right"><TextBlock Text="YuYue v2.0" Foreground="#95A5A6" VerticalAlignment="Center" Margin="12,0,0,0"/></StackPanel>
                 </DockPanel>
             </Border>
         </Grid>
