@@ -157,13 +157,19 @@ public class FeatureDemo
         var textService = new TextContentService();
         var chapterService = new ChapterService();
         var timerService = new ReadingTimerService();
+        var preferencesService = new PreferencesService();
+        var hotkeyService = new HotkeyService();
+        var autoStartService = new AutoStartService();
         
         // 2. 创建ViewModel
         var viewModel = new MainViewModel(
             libraryService,
             textService,
             chapterService,
-            timerService
+            timerService,
+            preferencesService,
+            hotkeyService,
+            autoStartService
         );
         
         Console.WriteLine("1. 初始化应用...");

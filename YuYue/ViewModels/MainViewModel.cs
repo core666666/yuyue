@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -30,6 +31,9 @@ public partial class MainViewModel : ObservableObject
     private readonly TextContentService _textContentService;
     private readonly ChapterService _chapterService;
     private readonly ReadingTimerService _timerService;
+    private readonly PreferencesService _preferencesService;
+    private readonly HotkeyService _hotkeyService;
+    private readonly AutoStartService _autoStartService;
 
     private string _fullContent = string.Empty;
     private Book? _currentBook;
@@ -54,12 +58,17 @@ public partial class MainViewModel : ObservableObject
     private const double FontSizeStep = 1.0;
 
     public MainViewModel(LibraryService libraryService, TextContentService textContentService, 
-        ChapterService chapterService, ReadingTimerService timerService)
+        ChapterService chapterService, ReadingTimerService timerService,
+        PreferencesService preferencesService, HotkeyService hotkeyService,
+        AutoStartService autoStartService)
     {
         _libraryService = libraryService;
         _textContentService = textContentService;
         _chapterService = chapterService;
         _timerService = timerService;
+        _preferencesService = preferencesService;
+        _hotkeyService = hotkeyService;
+        _autoStartService = autoStartService;
         readerLineHeight = Math.Round(DefaultFontSize * 1.6, 1);
         InitializeCamouflageTemplates();
         InitializeThemes();
@@ -182,6 +191,12 @@ public partial class MainViewModel : ObservableObject
     
     [ObservableProperty]
     private bool showStatisticsPanel;
+    
+    [ObservableProperty]
+    private bool isAutoStartEnabled;
+    
+    [ObservableProperty]
+    private List<HotkeyConfig> hotkeyConfigs = HotkeyConfig.GetDefaultConfigs();
 
     public string CamouflageStatus => SelectedCamouflage is null
         ? "请选择伪装模板"
@@ -201,6 +216,9 @@ public partial class MainViewModel : ObservableObject
     
     public Brush CurrentBackground => SelectedTheme?.BackgroundBrush ?? ReaderBackground;
     public Brush CurrentForeground => SelectedTheme?.ForegroundBrush ?? ReaderForeground;
+    
+    // 页面变化事件，用于通知UI滚动到顶部
+    public event EventHandler? PageChanged;
 
     #endregion
 
@@ -565,6 +583,7 @@ public partial class MainViewModel : ObservableObject
 
         CurrentOffset = newOffset;
         UpdatePageContent();
+        PageChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private bool CanGoToPreviousPage() => CurrentOffset > 0;
@@ -585,6 +604,7 @@ public partial class MainViewModel : ObservableObject
 
         CurrentOffset = newOffset;
         UpdatePageContent();
+        PageChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private bool CanGoToNextPage() => TotalLength > 0 && CurrentOffset + PageSize < TotalLength;
@@ -599,6 +619,7 @@ public partial class MainViewModel : ObservableObject
 
         CurrentOffset = 0;
         UpdatePageContent();
+        PageChanged?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
@@ -611,6 +632,7 @@ public partial class MainViewModel : ObservableObject
 
         CurrentOffset = Math.Max(TotalLength - PageSize, 0);
         UpdatePageContent();
+        PageChanged?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
@@ -904,6 +926,7 @@ public partial class MainViewModel : ObservableObject
         
         CurrentOffset = Math.Clamp(chapter.StartOffset, 0, Math.Max(TotalLength - 1, 0));
         UpdatePageContent();
+        PageChanged?.Invoke(this, EventArgs.Empty);
         StatusMessage = $"已跳转到：{chapter.Title}";
     }
     
@@ -1071,6 +1094,148 @@ public partial class MainViewModel : ObservableObject
         {
             TodayReadingMinutes = _currentBook.TotalReadingMinutes;
         }
+    }
+    
+    #endregion
+    
+    #region 热键与自启动
+    
+    /// <summary>
+    /// 初始化热键
+    /// </summary>
+    public void InitializeHotkeys(Window window)
+    {
+        _hotkeyService.Initialize(window);
+        _hotkeyService.HotkeyConflict += OnHotkeyConflict;
+        RegisterAllHotkeys();
+    }
+    
+    private void RegisterAllHotkeys()
+    {
+        _hotkeyService.UnregisterAll();
+        
+        foreach (var config in HotkeyConfigs.Where(c => c.IsEnabled))
+        {
+            Action? action = config.Action switch
+            {
+                "ShowHide" => ToggleWindowVisibility,
+                "NextPage" => NextPage,
+                "PreviousPage" => PreviousPage,
+                "NextChapter" => NextChapter,
+                "PreviousChapter" => PreviousChapter,
+                "AddBookmark" => AddBookmark,
+                "ToggleImmersive" => ToggleImmersiveMode,
+                "ToggleCamouflage" => ToggleCamouflageMode,
+                "SaveProgress" => async () => await SaveCurrentProgressAsync(),
+                "BackToBookshelf" => async () => await BackToBookshelfAsync(),
+                _ => null
+            };
+            
+            if (action != null)
+            {
+                _hotkeyService.RegisterHotkey(config.Modifiers, config.Key, action, config.Description);
+            }
+        }
+    }
+    
+    private void OnHotkeyConflict(object? sender, HotkeyConflictEventArgs e)
+    {
+        StatusMessage = $"热键冲突：{e.DisplayText} 已被占用";
+    }
+    
+    private void ToggleWindowVisibility()
+    {
+        // 由 MainWindow 实现
+    }
+    
+    [RelayCommand]
+    private void OpenHotkeySettings()
+    {
+        var window = new Views.HotkeySettingsWindow(HotkeyConfigs);
+        if (window.ShowDialog() == true && window.IsSaved)
+        {
+            HotkeyConfigs = window.HotkeyConfigs;
+            RegisterAllHotkeys();
+            StatusMessage = "热键配置已更新";
+        }
+    }
+    
+    [RelayCommand]
+    private void ToggleAutoStart()
+    {
+        var success = _autoStartService.ToggleAutoStart();
+        if (success)
+        {
+            IsAutoStartEnabled = _autoStartService.IsAutoStartEnabled();
+            StatusMessage = IsAutoStartEnabled ? "已启用开机自启动" : "已禁用开机自启动";
+        }
+        else
+        {
+            StatusMessage = "设置开机自启动失败";
+        }
+    }
+    
+    /// <summary>
+    /// 加载偏好设置
+    /// </summary>
+    public async Task LoadPreferencesAsync()
+    {
+        var prefs = await _preferencesService.LoadPreferencesAsync();
+        
+        // 应用设置
+        ReaderFontSize = prefs.FontSize;
+        ReaderLineHeight = prefs.LineHeight;
+        ParagraphSpacing = prefs.ParagraphSpacing;
+        EnableFirstLineIndent = prefs.EnableFirstLineIndent;
+        FirstLineIndent = prefs.FirstLineIndent;
+        ColumnCount = prefs.ColumnCount;
+        PageSize = prefs.PageSize;
+        UseDarkTheme = prefs.UseDarkTheme;
+        IsAutoPageEnabled = prefs.AutoPageEnabled;
+        AutoPageInterval = prefs.AutoPageInterval;
+        IsWindowTopmost = prefs.WindowTopmost;
+        WindowOpacity = prefs.WindowOpacity;
+        IsBorderless = prefs.BorderlessMode;
+        AutoResumeLastBook = prefs.AutoResumeLastBook;
+        HotkeyConfigs = prefs.HotkeyConfigs;
+        IsAutoStartEnabled = _autoStartService.IsAutoStartEnabled();
+        
+        // 应用主题
+        var theme = Themes.FirstOrDefault(t => t.Name == prefs.SelectedThemeName);
+        if (theme != null)
+        {
+            SelectedTheme = theme;
+        }
+    }
+    
+    /// <summary>
+    /// 保存偏好设置
+    /// </summary>
+    public async Task SavePreferencesAsync()
+    {
+        var prefs = new ReadingPreferences
+        {
+            FontSize = ReaderFontSize,
+            LineHeight = ReaderLineHeight,
+            ParagraphSpacing = ParagraphSpacing,
+            EnableFirstLineIndent = EnableFirstLineIndent,
+            FirstLineIndent = FirstLineIndent,
+            ColumnCount = ColumnCount,
+            PageSize = PageSize,
+            SelectedThemeName = SelectedTheme?.Name ?? "日间模式",
+            UseDarkTheme = UseDarkTheme,
+            AutoPageEnabled = IsAutoPageEnabled,
+            AutoPageInterval = AutoPageInterval,
+            ImmersiveModeEnabled = IsImmersiveMode,
+            WindowTopmost = IsWindowTopmost,
+            WindowOpacity = WindowOpacity,
+            BorderlessMode = IsBorderless,
+            AutoResumeLastBook = AutoResumeLastBook,
+            HotkeyConfigs = HotkeyConfigs,
+            AutoStartEnabled = IsAutoStartEnabled
+        };
+        
+        await _preferencesService.SavePreferencesAsync(prefs);
     }
     
     #endregion

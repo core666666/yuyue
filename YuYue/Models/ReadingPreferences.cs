@@ -51,6 +51,12 @@ public class ReadingPreferences
     
     // 快捷键设置
     public KeyBindings KeyBindings { get; set; } = new();
+    
+    // 热键配置
+    public List<HotkeyConfig> HotkeyConfigs { get; set; } = HotkeyConfig.GetDefaultConfigs();
+    
+    // 开机自启动
+    public bool AutoStartEnabled { get; set; } = false;
 }
 
 /// <summary>

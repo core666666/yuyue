@@ -23,6 +23,9 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly HotKeyService _hotKeyService = new();
     private readonly TrayIconService _trayIconService = new();
+    private readonly HotkeyService _hotkeyService = new();
+    private readonly PreferencesService _preferencesService = new();
+    private readonly AutoStartService _autoStartService = new();
 
     private HwndSource? _hwndSource;
     private bool _isHiddenToTray;
@@ -43,9 +46,13 @@ public partial class MainWindow : Window
             new LibraryService(), 
             new TextContentService(),
             new ChapterService(),
-            new ReadingTimerService());
+            new ReadingTimerService(),
+            _preferencesService,
+            _hotkeyService,
+            _autoStartService);
         DataContext = _viewModel;
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        _viewModel.PageChanged += ViewModel_PageChanged;
 
         HideToTrayCommand = new RelayCommand(HideWindowToTray);
 
@@ -96,6 +103,13 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        // 加载偏好设置
+        await _viewModel.LoadPreferencesAsync();
+        
+        // 初始化热键
+        _viewModel.InitializeHotkeys(this);
+        
+        // 初始化应用
         await _viewModel.InitializeAsync();
     }
 
@@ -103,12 +117,17 @@ public partial class MainWindow : Window
     {
         _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
 
+        // 保存阅读进度
         if (_viewModel.SaveCurrentProgressCommand is IAsyncRelayCommand command)
         {
             await command.ExecuteAsync(null);
         }
+        
+        // 保存偏好设置
+        await _viewModel.SavePreferencesAsync();
 
         _hotKeyService.Dispose();
+        _hotkeyService.Dispose();
         _trayIconService.Dispose();
 
         if (_hwndSource is not null)
@@ -127,6 +146,15 @@ public partial class MainWindow : Window
         {
             Dispatcher.Invoke(HandleCamouflageModeChanged);
         }
+    }
+    
+    private void ViewModel_PageChanged(object? sender, EventArgs e)
+    {
+        // 翻页后滚动到顶部
+        Dispatcher.Invoke(() =>
+        {
+            ReaderScrollViewer?.ScrollToTop();
+        });
     }
 
     private async void BooksListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
