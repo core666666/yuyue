@@ -37,6 +37,9 @@ public partial class MainViewModel : ObservableObject
     private static readonly SolidColorBrush LightReaderForeground = new(MediaColor.FromRgb(0x2C, 0x3E, 0x50));
     private static readonly SolidColorBrush DarkReaderForeground = new(MediaColor.FromRgb(0xEC, 0xF0, 0xF1));
 
+    private const double MinWindowOpacity = 0.4;
+    private const double MaxWindowOpacity = 1.0;
+
     private const int DefaultPageSize = 1200;
     private const int MinPageSize = 600;
     private const int MaxPageSize = 5000;
@@ -52,6 +55,7 @@ public partial class MainViewModel : ObservableObject
         _libraryService = libraryService;
         _textContentService = textContentService;
         readerLineHeight = Math.Round(DefaultFontSize * 1.6, 1);
+        InitializeCamouflageTemplates();
     }
 
     #region 公共属性
@@ -98,6 +102,28 @@ public partial class MainViewModel : ObservableObject
     public Brush ReaderBackground => UseDarkTheme ? DarkReaderBackground : LightReaderBackground;
 
     public Brush ReaderForeground => UseDarkTheme ? DarkReaderForeground : LightReaderForeground;
+
+    [ObservableProperty]
+    private bool isCamouflageMode;
+
+    [ObservableProperty]
+    private ObservableCollection<CamouflageTemplate> camouflageTemplates = new();
+
+    [ObservableProperty]
+    private CamouflageTemplate? selectedCamouflage;
+
+    [ObservableProperty]
+    private bool isWindowTopmost;
+
+    [ObservableProperty]
+    private double windowOpacity = 0.95;
+
+    [ObservableProperty]
+    private bool isBorderless = true;
+
+    public string CamouflageStatus => SelectedCamouflage is null
+        ? "请选择伪装模板"
+        : $"{SelectedCamouflage.DisplayName} · {SelectedCamouflage.Description}";
 
     public int CurrentPageNumber => PageSize == 0 ? 0 : CurrentOffset / PageSize;
 
@@ -178,6 +204,59 @@ public partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(ReaderBackground));
         OnPropertyChanged(nameof(ReaderForeground));
+    }
+
+    partial void OnWindowOpacityChanged(double value)
+    {
+        if (value < MinWindowOpacity)
+        {
+            WindowOpacity = MinWindowOpacity;
+        }
+        else if (value > MaxWindowOpacity)
+        {
+            WindowOpacity = MaxWindowOpacity;
+        }
+    }
+
+    partial void OnIsCamouflageModeChanged(bool value)
+    {
+        if (value)
+        {
+            if (SelectedCamouflage is null && CamouflageTemplates.Count > 0)
+            {
+                SelectedCamouflage = CamouflageTemplates[0];
+            }
+
+            if (ActiveSection != MainSection.Reader)
+            {
+                ActiveSection = MainSection.Reader;
+            }
+        }
+
+        StatusMessage = value
+            ? $"已进入伪装模式（{SelectedCamouflage?.DisplayName ?? "请选择模板"}）。"
+            : "已返回阅读模式。";
+
+        OnPropertyChanged(nameof(CamouflageStatus));
+    }
+
+    partial void OnSelectedCamouflageChanged(CamouflageTemplate? value)
+    {
+        OnPropertyChanged(nameof(CamouflageStatus));
+        if (value is not null && IsCamouflageMode)
+        {
+            StatusMessage = $"当前伪装：{value.DisplayName}";
+        }
+    }
+
+    partial void OnIsWindowTopmostChanged(bool value)
+    {
+        StatusMessage = value ? "窗口已置顶。" : "窗口已取消置顶。";
+    }
+
+    partial void OnIsBorderlessChanged(bool value)
+    {
+        StatusMessage = value ? "已启用无边框模式。" : "已切换为系统边框。";
     }
 
     #endregion
@@ -561,6 +640,48 @@ public partial class MainViewModel : ObservableObject
 
     #endregion
 
+    #region 伪装模式
+
+    [RelayCommand]
+    private void ToggleCamouflageMode()
+    {
+        var enable = !IsCamouflageMode;
+        IsCamouflageMode = enable;
+
+        if (enable && ActiveSection != MainSection.Reader)
+        {
+            ActiveSection = MainSection.Reader;
+        }
+    }
+
+    [RelayCommand]
+    private void ExitCamouflageMode()
+    {
+        IsCamouflageMode = false;
+    }
+
+    [RelayCommand]
+    private void NextCamouflage()
+    {
+        if (CamouflageTemplates.Count == 0)
+        {
+            return;
+        }
+
+        var currentIndex = SelectedCamouflage is null
+            ? -1
+            : CamouflageTemplates.IndexOf(SelectedCamouflage);
+        var nextIndex = (currentIndex + 1) % CamouflageTemplates.Count;
+        SelectedCamouflage = CamouflageTemplates[nextIndex];
+        IsCamouflageMode = true;
+        if (ActiveSection != MainSection.Reader)
+        {
+            ActiveSection = MainSection.Reader;
+        }
+    }
+
+    #endregion
+
     #region 持久化支持
 
     private async Task PersistLibraryAsync()
@@ -584,4 +705,18 @@ public partial class MainViewModel : ObservableObject
     }
 
     #endregion
+
+    private void InitializeCamouflageTemplates()
+    {
+        var templates = new[]
+        {
+            new CamouflageTemplate("code", "代码编辑器", "模拟在编辑器中编写代码"),
+            new CamouflageTemplate("excel", "数据表格", "展示业务报表与数字"),
+            new CamouflageTemplate("browser", "浏览器", "浏览工作相关网页")
+        };
+
+        CamouflageTemplates = new ObservableCollection<CamouflageTemplate>(templates);
+        SelectedCamouflage = CamouflageTemplates.FirstOrDefault();
+        OnPropertyChanged(nameof(CamouflageStatus));
+    }
 }

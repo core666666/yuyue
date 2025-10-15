@@ -1,10 +1,11 @@
-<Window x:Class="YuYue.MainWindow"
+﻿<Window x:Class="YuYue.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:YuYue.Models"
         mc:Ignorable="d"
-        Title="鱼阅 - 碎片化阅读器"
+        Title="楸奸槄 - 纰庣墖鍖栭槄璇诲櫒"
         Height="720"
         Width="1200"
         MinHeight="600"
@@ -13,7 +14,9 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="CanResizeWithGrip"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Topmost="{Binding IsWindowTopmost}"
+        Opacity="{Binding WindowOpacity}">
 
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Control" Command="{Binding ImportLocalBookCommand}"/>
@@ -33,6 +36,8 @@
         <KeyBinding Key="OemPlus" Modifiers="Control" Command="{Binding IncreaseFontSizeCommand}"/>
         <KeyBinding Key="OemMinus" Modifiers="Control" Command="{Binding DecreaseFontSizeCommand}"/>
         <KeyBinding Key="T" Modifiers="Control" Command="{Binding ToggleThemeCommand}"/>
+        <KeyBinding Key="F12" Command="{Binding ToggleCamouflageModeCommand}"/>
+        <KeyBinding Key="Tab" Modifiers="Control" Command="{Binding NextCamouflageCommand}"/>
         <KeyBinding Key="H" Modifiers="Alt"
                     Command="{Binding HideToTrayCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
     </Window.InputBindings>
@@ -132,10 +137,10 @@
                                 Orientation="Horizontal"
                                 Margin="18,0,0,0"
                                 VerticalAlignment="Center">
-                        <TextBlock Text="🐟"
+                        <TextBlock Text="馃悷"
                                    FontSize="18"
                                    Margin="0,0,8,0"/>
-                        <TextBlock Text="鱼阅"
+                        <TextBlock Text="楸奸槄"
                                    FontSize="14"
                                    FontWeight="SemiBold"
                                    Foreground="White"
@@ -145,8 +150,7 @@
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Margin="0,0,0,0">
+                                VerticalAlignment="Center">
                         <Button Content="书架"
                                 Margin="0,0,6,0"
                                 Style="{StaticResource TitleBarButton}"
@@ -195,9 +199,8 @@
                     <StackPanel>
                         <TextBlock Text="沉浸阅读"
                                    Foreground="#BDC3C7"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="三页小说的小憩"
+                                   FontSize="12"/>
+                        <TextBlock Text="��ҳС˵��С��"
                                    Foreground="White"
                                    FontSize="18"
                                    FontWeight="Bold"
@@ -221,6 +224,30 @@
                         <Button Content="隐藏到托盘"
                                 Style="{StaticResource SideMenuButton}"
                                 Command="{Binding HideToTrayCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        <TextBlock Text="窗口控制"
+                                   Margin="0,20,0,6"
+                                   Foreground="#BDC3C7"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"/>
+                        <CheckBox Content="窗口置顶"
+                                  Margin="4,4,0,0"
+                                  Foreground="#ECF0F1"
+                                  IsChecked="{Binding IsWindowTopmost, Mode=TwoWay}"/>
+                        <CheckBox Content="无边框模式"
+                                  Margin="4,4,0,0"
+                                  Foreground="#ECF0F1"
+                                  IsChecked="{Binding IsBorderless, Mode=TwoWay}"/>
+                        <StackPanel Orientation="Vertical"
+                                    Margin="0,10,0,0">
+                            <TextBlock Text="{Binding WindowOpacity, StringFormat=透明度 {0:P0}}"
+                                       Foreground="#ECF0F1"
+                                       FontSize="12"/>
+                            <Slider Minimum="0.4"
+                                    Maximum="1.0"
+                                    Value="{Binding WindowOpacity, Mode=TwoWay}"
+                                    TickFrequency="0.05"
+                                    IsSnapToTickEnabled="True"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -256,7 +283,7 @@
                         <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center"
                                     Margin="0,0,0,16">
-                            <TextBlock Text="我的书架"
+                            <TextBlock Text="鎴戠殑涔︽灦"
                                        FontSize="22"
                                        FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding StatusMessage}"
@@ -273,10 +300,10 @@
                                   Background="Transparent">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="书名"
+                                    <GridViewColumn Header="涔﹀悕"
                                                     Width="260"
                                                     DisplayMemberBinding="{Binding Title}"/>
-                                    <GridViewColumn Header="进度">
+                                    <GridViewColumn Header="杩涘害">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -298,7 +325,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="路径"
+                                    <GridViewColumn Header="璺緞"
                                                     Width="420"
                                                     DisplayMemberBinding="{Binding FilePath}"/>
                                 </GridView>
@@ -332,6 +359,16 @@
 
                             <StackPanel Orientation="Horizontal"
                                         VerticalAlignment="Center">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
                                 <TextBlock Text="{Binding SelectedBook.Title, TargetNullValue=未选择书籍}"
                                            FontSize="22"
                                            FontWeight="SemiBold"/>
@@ -356,35 +393,175 @@
                                              Text="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
                             </StackPanel>
-
-                            <StackPanel Grid.Column="1"
-                                        Orientation="Horizontal"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center">
-                                <ToggleButton Content="夜间模式"
-                                              Padding="12,4"
-                                              IsChecked="{Binding UseDarkTheme, Mode=TwoWay}"/>
-                                <Button Content="Aa+"
-                                        Margin="8,0,0,0"
-                                        Padding="12,4"
-                                        Command="{Binding IncreaseFontSizeCommand}"/>
-                                <Button Content="Aa-"
-                                        Margin="8,0,0,0"
-                                        Padding="12,4"
-                                        Command="{Binding DecreaseFontSizeCommand}"/>
-                                <Button Content="字多"
-                                        Margin="8,0,0,0"
-                                        Padding="12,4"
-                                        Command="{Binding IncreasePageSizeCommand}"/>
-                                <Button Content="字少"
-                                        Margin="8,0,0,0"
-                                        Padding="12,4"
-                                        Command="{Binding DecreasePageSizeCommand}"/>
-                                <Button Content="重置"
-                                        Margin="8,0,0,0"
-                                        Padding="12,4"
-                                        Command="{Binding ResetReaderPreferencesCommand}"/>
+                            <StackPanel Orientation="Vertical"
+                                        Margin="0,0,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="伪装模式已开启"
+                                           Foreground="#7F8C8D"
+                                           FontSize="18"/>
+                                <TextBlock Text="{Binding CamouflageStatus}"
+                                           Foreground="#95A5A6"/>
                             </StackPanel>
+
+                            <Grid Grid.Column="1"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Grid.Row="0">
+                                    <ToggleButton Content="夜间模式"
+                                                  Padding="12,4"
+                                                  IsChecked="{Binding UseDarkTheme, Mode=TwoWay}">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
+                                    <Button Content="Aa+"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding IncreaseFontSizeCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="Aa-"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding DecreaseFontSizeCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="字多"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding IncreasePageSizeCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="字少"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding DecreasePageSizeCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="重置"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding ResetReaderPreferencesCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Grid.Row="1"
+                                            Margin="0,8,0,0">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <ToggleButton Content="伪装模式"
+                                                  Padding="12,4"
+                                                  IsChecked="{Binding IsCamouflageMode, Mode=TwoWay}"/>
+                                    <ComboBox ItemsSource="{Binding CamouflageTemplates}"
+                                              SelectedItem="{Binding SelectedCamouflage}"
+                                              DisplayMemberPath="DisplayName"
+                                              Width="160"
+                                              Margin="8,0,0,0"/>
+                                    <Button Content="换一套"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding NextCamouflageCommand}"/>
+                                    <Button Content="恢复阅读"
+                                            Margin="8,0,0,0"
+                                            Padding="12,4"
+                                            Command="{Binding ExitCamouflageModeCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
                         </Grid>
 
                         <Border Grid.Row="1"
@@ -402,6 +579,233 @@
                             </ScrollViewer>
                         </Border>
 
+                        <Border Grid.Row="1"
+                                Background="#F7F9FC"
+                                BorderBrush="#E0E6ED"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <StackPanel Margin="24,16,24,0">
+                                    <TextBlock Text="伪装模式"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding CamouflageStatus}"
+                                               Margin="0,4,0,0"
+                                               Foreground="#95A5A6"/>
+                                    <TextBlock Text="按 F12 可在伪装与阅读之间切换。"
+                                               Margin="0,8,0,0"
+                                               Foreground="#BDC3C7"/>
+                                </StackPanel>
+
+                                <Grid Margin="24,80,24,24">
+                                    <Grid x:Name="CodeCamouflage">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedCamouflage.Key}" Value="code">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="42"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" Background="#2D2D2D" CornerRadius="4,4,0,0">
+                                            <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
+                                                <Ellipse Fill="#FF5F56" Width="10" Height="10" Margin="0,0,6,0"/>
+                                                <Ellipse Fill="#FFBD2E" Width="10" Height="10" Margin="0,0,6,0"/>
+                                                <Ellipse Fill="#27C93F" Width="10" Height="10"/>
+                                                <TextBlock Text="ReportGenerator.cs"
+                                                           Foreground="#DADADA"
+                                                           Margin="12,0,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Row="1" Background="#1E1E1E" CornerRadius="0,0,4,4" Padding="18">
+                                            <StackPanel>
+                                                <TextBlock Text="public class ReportGenerator"
+                                                           Foreground="#9CDCFE"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="{}{"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="    public void GenerateReport()"
+                                                           Foreground="#DCDCAA"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="{}    {"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="        var rows = FetchData();"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="        if (!rows.Any())"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="{}        {"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="            Log(&quot;No data&quot;);"
+                                                           Foreground="#CE9178"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="            return;"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="        }"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text=""
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="        Export(rows);"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="    }"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                                <TextBlock Text="}"
+                                                           Foreground="#D4D4D4"
+                                                           FontFamily="Consolas"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <Grid x:Name="ExcelCamouflage" Margin="0,0,0,0">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedCamouflage.Key}" Value="excel">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Border Background="White" CornerRadius="4" BorderBrush="#D0D7DE" BorderThickness="1" Padding="12">
+                                            <StackPanel>
+                                                <TextBlock Text="Q3 团队绩效表"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="16"/>
+                                                <UniformGrid Rows="5" Columns="5" Margin="0,12,0,0">
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5" Background="#EEF4FF">
+                                                        <TextBlock Text="部门" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5" Background="#EEF4FF">
+                                                        <TextBlock Text="负责人" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5" Background="#EEF4FF">
+                                                        <TextBlock Text="完成率" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5" Background="#EEF4FF">
+                                                        <TextBlock Text="目标" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5" Background="#EEF4FF">
+                                                        <TextBlock Text="本月进展" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="研发" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="林远" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="92%" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="CI/CD 全流程上线" TextWrapping="Wrap" Margin="6,0,6,0"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="已完成回归测试" TextWrapping="Wrap" Margin="6,0,6,0"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="市场" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="陈露" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="105%" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="新品上线渠道拓展" TextWrapping="Wrap" Margin="6,0,6,0"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="完成 3 场线上宣讲" TextWrapping="Wrap" Margin="6,0,6,0"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="运营" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="周航" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="88%" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="客服响应提速" TextWrapping="Wrap" Margin="6,0,6,0"/>
+                                                    </Border>
+                                                    <Border BorderBrush="#D0D7DE" BorderThickness="0.5">
+                                                        <TextBlock Text="培训新同事 4 人" TextWrapping="Wrap" Margin="6,0,6,0"/>
+                                                    </Border>
+                                                </UniformGrid>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <Grid x:Name="BrowserCamouflage">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedCamouflage.Key}" Value="browser">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Border Background="White" CornerRadius="4" BorderBrush="#D0D7DE" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="48"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Border Grid.Row="0" Background="#F2F4F7" Padding="12" CornerRadius="4,4,0,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Rectangle Fill="#4285F4" Width="16" Height="16" RadiusX="3" RadiusY="3"/>
+                                                        <TextBlock Text="公司项目门户" Margin="8,0,0,0" FontWeight="SemiBold"/>
+                                                        <Border Background="White" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="12" Margin="12,0,0,0" Padding="12,2">
+                                                            <TextBlock Text="https://intranet/projects/reading" Foreground="#4B5563"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ScrollViewer Grid.Row="1" Padding="18">
+                                                    <StackPanel>
+                                                        <TextBlock Text="鱼阅 · 阅读效率提升方案" FontSize="18" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="更新时间：2025-10-15" Foreground="#95A5A6" Margin="0,6,0,12"/>
+                                                        <TextBlock Text="• 本周完成现有工具调研，整理三家竞品优劣。" Margin="0,2,0,0"/>
+                                                        <TextBlock Text="• 正在推进桌面端 MVP，目标下周内完成演示版。" Margin="0,2,0,0"/>
+                                                        <TextBlock Text="• 需与法务确认书源合规问题，预计周五给出处理建议。" Margin="0,2,0,0"/>
+                                                        <Border Background="#F8FAFC" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="4" Margin="0,12,0,0" Padding="12">
+                                                            <TextBlock Text="提醒：请在 10 月 20 日前提交最新需求排期。" Foreground="#2563EB"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </ScrollViewer>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Border>
                         <Grid Grid.Row="2"
                               Margin="0,16,0,0">
                             <Grid.ColumnDefinitions>
@@ -411,19 +815,30 @@
 
                             <StackPanel Orientation="Horizontal"
                                         VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ProgressDisplay}"
-                                           Foreground="#7F8C8D"/>
-                                <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0:F1}%}"
-                                           Margin="16,0,0,0"
-                                           Foreground="#7F8C8D"/>
-                                <TextBlock Text="{Binding TotalLength, StringFormat=总字数 {0:N0}}"
-                                           Margin="16,0,0,0"
-                                           Foreground="#7F8C8D"/>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
                             </StackPanel>
-
                             <StackPanel Grid.Column="1"
                                         Orientation="Horizontal"
                                         HorizontalAlignment="Right">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
                                 <Button Content="回到开头"
                                         Width="90"
                                         Height="32"
@@ -510,10 +925,10 @@
                                Foreground="#7F8C8D"/>
                     <StackPanel Orientation="Horizontal"
                                 DockPanel.Dock="Right">
-                        <TextBlock Text="快捷键: Ctrl+O 导入 | Ctrl+S 保存 | Ctrl+T 夜间模式"
+                        <TextBlock Text="蹇嵎閿? Ctrl+O 瀵煎叆 | Ctrl+S 淇濆瓨 | Ctrl+T 澶滈棿妯″紡"
                                    Foreground="#95A5A6"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Text="版本 v0.1.0"
+                        <TextBlock Text="鐗堟湰 v0.1.0"
                                    Margin="12,0,0,0"
                                    Foreground="#95A5A6"
                                    VerticalAlignment="Center"/>
@@ -523,3 +938,10 @@
         </Grid>
     </Border>
 </Window>
+
+
+
+
+
+
+

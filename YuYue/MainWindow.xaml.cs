@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
 using CommunityToolkit.Mvvm.Input;
 using YuYue.Services;
 using YuYue.ViewModels;
@@ -25,6 +27,8 @@ public partial class MainWindow : Window
     private bool _isHiddenToTray;
     private int _globalToggleHotKeyId;
     private int _bossKeyHotKeyId;
+    private Effect? _cachedShadowEffect;
+    private System.Windows.Media.Brush? _originalBackground;
 
     public ICommand HideToTrayCommand { get; }
 
@@ -34,6 +38,7 @@ public partial class MainWindow : Window
 
         _viewModel = new MainViewModel(new LibraryService(), new TextContentService());
         DataContext = _viewModel;
+        _viewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         HideToTrayCommand = new RelayCommand(HideWindowToTray);
 
@@ -50,6 +55,10 @@ public partial class MainWindow : Window
         {
             return;
         }
+
+        _originalBackground = Background;
+        _cachedShadowEffect = Effect;
+        ApplyBorderless();
 
         _hwndSource.AddHook(WndProc);
         _hotKeyService.Initialize(_hwndSource.Handle);
@@ -85,6 +94,8 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
+        _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+
         if (_viewModel.SaveCurrentProgressCommand is IAsyncRelayCommand command)
         {
             await command.ExecuteAsync(null);
@@ -96,6 +107,14 @@ public partial class MainWindow : Window
         if (_hwndSource is not null)
         {
             _hwndSource.RemoveHook(WndProc);
+        }
+    }
+
+    private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.IsBorderless))
+        {
+            Dispatcher.Invoke(ApplyBorderless);
         }
     }
 
@@ -144,6 +163,31 @@ public partial class MainWindow : Window
         WindowState = WindowState == WindowState.Maximized
             ? WindowState.Normal
             : WindowState.Maximized;
+    }
+
+    private void ApplyBorderless()
+    {
+        if (_viewModel.IsBorderless)
+        {
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.CanResizeWithGrip;
+            if (_originalBackground is not null)
+            {
+                Background = _originalBackground;
+            }
+
+            if (_cachedShadowEffect is not null)
+            {
+                Effect = _cachedShadowEffect;
+            }
+        }
+        else
+        {
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            ResizeMode = ResizeMode.CanResize;
+            Effect = null;
+            Background = System.Windows.SystemColors.WindowBrush;
+        }
     }
 
     private void ToggleWindowVisibility()
