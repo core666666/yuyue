@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 using YuYue.Models;
 using YuYue.Services;
+using Brush = System.Windows.Media.Brush;
+using MediaColor = System.Windows.Media.Color;
 
 namespace YuYue.ViewModels;
 
@@ -31,10 +32,10 @@ public partial class MainViewModel : ObservableObject
     private string _fullContent = string.Empty;
     private Book? _currentBook;
 
-    private static readonly SolidColorBrush LightReaderBackground = new(Color.FromRgb(0xFB, 0xFC, 0xFE));
-    private static readonly SolidColorBrush DarkReaderBackground = new(Color.FromRgb(0x1E, 0x25, 0x33));
-    private static readonly SolidColorBrush LightReaderForeground = new(Color.FromRgb(0x2C, 0x3E, 0x50));
-    private static readonly SolidColorBrush DarkReaderForeground = new(Color.FromRgb(0xEC, 0xF0, 0xF1));
+    private static readonly SolidColorBrush LightReaderBackground = new(MediaColor.FromRgb(0xFB, 0xFC, 0xFE));
+    private static readonly SolidColorBrush DarkReaderBackground = new(MediaColor.FromRgb(0x1E, 0x25, 0x33));
+    private static readonly SolidColorBrush LightReaderForeground = new(MediaColor.FromRgb(0x2C, 0x3E, 0x50));
+    private static readonly SolidColorBrush DarkReaderForeground = new(MediaColor.FromRgb(0xEC, 0xF0, 0xF1));
 
     private const int DefaultPageSize = 1200;
     private const int MinPageSize = 600;
@@ -242,7 +243,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ImportLocalBookAsync()
     {
-        var dialog = new OpenFileDialog
+        var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
             Multiselect = false,

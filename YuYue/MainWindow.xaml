@@ -33,6 +33,8 @@
         <KeyBinding Key="OemPlus" Modifiers="Control" Command="{Binding IncreaseFontSizeCommand}"/>
         <KeyBinding Key="OemMinus" Modifiers="Control" Command="{Binding DecreaseFontSizeCommand}"/>
         <KeyBinding Key="T" Modifiers="Control" Command="{Binding ToggleThemeCommand}"/>
+        <KeyBinding Key="H" Modifiers="Alt"
+                    Command="{Binding HideToTrayCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
     </Window.InputBindings>
 
     <Window.Resources>
@@ -216,6 +218,9 @@
                         <Button Content="保存阅读进度"
                                 Style="{StaticResource SideMenuButton}"
                                 Command="{Binding SaveCurrentProgressCommand}"/>
+                        <Button Content="隐藏到托盘"
+                                Style="{StaticResource SideMenuButton}"
+                                Command="{Binding HideToTrayCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                     </StackPanel>
                 </Border>
 

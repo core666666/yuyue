@@ -1,7 +1,9 @@
+using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using CommunityToolkit.Mvvm.Input;
 using YuYue.Services;
 using YuYue.ViewModels;
@@ -13,7 +15,18 @@ namespace YuYue;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private const int WmHotKey = 0x0312;
+
     private readonly MainViewModel _viewModel;
+    private readonly HotKeyService _hotKeyService = new();
+    private readonly TrayIconService _trayIconService = new();
+
+    private HwndSource? _hwndSource;
+    private bool _isHiddenToTray;
+    private int _globalToggleHotKeyId;
+    private int _bossKeyHotKeyId;
+
+    public ICommand HideToTrayCommand { get; }
 
     public MainWindow()
     {
@@ -22,8 +35,47 @@ public partial class MainWindow : Window
         _viewModel = new MainViewModel(new LibraryService(), new TextContentService());
         DataContext = _viewModel;
 
+        HideToTrayCommand = new RelayCommand(HideWindowToTray);
+
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        _hwndSource = (HwndSource?)PresentationSource.FromVisual(this);
+        if (_hwndSource is null)
+        {
+            return;
+        }
+
+        _hwndSource.AddHook(WndProc);
+        _hotKeyService.Initialize(_hwndSource.Handle);
+
+        try
+        {
+            _globalToggleHotKeyId = _hotKeyService.RegisterHotKey("Ctrl+Shift+F", ToggleWindowVisibility);
+        }
+        catch (Exception ex)
+        {
+            _viewModel.StatusMessage = $"注册热键失败（Ctrl+Shift+F）：{ex.Message}";
+        }
+
+        try
+        {
+            _bossKeyHotKeyId = _hotKeyService.RegisterHotKey("Alt+H", HideWindowToTray);
+        }
+        catch (Exception ex)
+        {
+            _viewModel.StatusMessage = $"注册老板键失败（Alt+H）：{ex.Message}";
+        }
+
+        _trayIconService.Configure(ShowFromTray, () =>
+        {
+            Dispatcher.Invoke(Close);
+        });
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -36,6 +88,14 @@ public partial class MainWindow : Window
         if (_viewModel.SaveCurrentProgressCommand is IAsyncRelayCommand command)
         {
             await command.ExecuteAsync(null);
+        }
+
+        _hotKeyService.Dispose();
+        _trayIconService.Dispose();
+
+        if (_hwndSource is not null)
+        {
+            _hwndSource.RemoveHook(WndProc);
         }
     }
 
@@ -84,5 +144,63 @@ public partial class MainWindow : Window
         WindowState = WindowState == WindowState.Maximized
             ? WindowState.Normal
             : WindowState.Maximized;
+    }
+
+    private void ToggleWindowVisibility()
+    {
+        if (_isHiddenToTray || !IsVisible || WindowState == WindowState.Minimized)
+        {
+            ShowFromTray();
+        }
+        else
+        {
+            HideWindowToTray();
+        }
+    }
+
+    private void HideWindowToTray()
+    {
+        if (_isHiddenToTray)
+        {
+            return;
+        }
+
+        _trayIconService.Show();
+        _trayIconService.ShowBalloonTip("鱼阅已隐藏", "应用仍在运行，点击此处或按 Ctrl+Shift+F 恢复。");
+
+        _isHiddenToTray = true;
+        ShowInTaskbar = false;
+        Hide();
+    }
+
+    private void ShowFromTray()
+    {
+        if (!_isHiddenToTray)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                WindowState = WindowState.Normal;
+                Activate();
+            }
+            return;
+        }
+
+        _trayIconService.Hide();
+        ShowInTaskbar = true;
+        Show();
+        WindowState = WindowState.Normal;
+        Activate();
+        _isHiddenToTray = false;
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WmHotKey)
+        {
+            _hotKeyService.ProcessHotKeyMessage(wParam.ToInt32());
+            handled = true;
+        }
+
+        return IntPtr.Zero;
     }
 }
