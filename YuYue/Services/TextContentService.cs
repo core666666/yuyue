@@ -7,17 +7,25 @@ using System.Threading.Tasks;
 namespace YuYue.Services;
 
 /// <summary>
-/// Loads plain text content from disk with lightweight encoding detection.
+/// 提供本地文本文件的内容加载与轻量编码探测能力。
 /// </summary>
 public class TextContentService
 {
-    private static readonly Encoding[] FallbackEncodings =
+    private static readonly Encoding[] FallbackEncodings;
+
+    static TextContentService()
     {
-        Encoding.UTF8,
-        Encoding.Unicode,
-        Encoding.GetEncoding("GB18030"),
-        Encoding.GetEncoding("Big5")
-    };
+        // 使 .NET 能够识别 GB18030、Big5 等东亚常用编码。
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+        FallbackEncodings = new[]
+        {
+            Encoding.UTF8,
+            Encoding.Unicode,
+            Encoding.GetEncoding("GB18030"),
+            Encoding.GetEncoding("Big5")
+        };
+    }
 
     public async Task<string> LoadContentAsync(string filePath, CancellationToken cancellationToken = default)
     {
@@ -31,16 +39,22 @@ public class TextContentService
             try
             {
                 await using var stream = File.OpenRead(filePath);
-                using var reader = new StreamReader(stream, encoding, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+                using var reader = new StreamReader(
+                    stream,
+                    encoding,
+                    detectEncodingFromByteOrderMarks: true,
+                    bufferSize: 4096,
+                    leaveOpen: false);
+
                 return await reader.ReadToEndAsync(cancellationToken);
             }
             catch (DecoderFallbackException)
             {
-                // Try the next encoding.
+                // 尝试下一种编码。
             }
         }
 
-        // Default to UTF8 if everything else fails.
+        // 所有备选方案失败时兜底为 UTF8。
         return await File.ReadAllTextAsync(filePath, Encoding.UTF8, cancellationToken);
     }
 }

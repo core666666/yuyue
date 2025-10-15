@@ -15,6 +15,26 @@
         ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterScreen">
 
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding ImportLocalBookCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveCurrentProgressCommand}"/>
+        <KeyBinding Key="Delete" Command="{Binding DeleteSelectedBookCommand}"/>
+        <KeyBinding Key="Return" Command="{Binding OpenSelectedBookCommand}"/>
+        <KeyBinding Key="Enter" Command="{Binding OpenSelectedBookCommand}"/>
+        <KeyBinding Key="Escape" Command="{Binding BackToBookshelfCommand}"/>
+        <KeyBinding Key="PageDown" Command="{Binding NextPageCommand}"/>
+        <KeyBinding Key="PageUp" Command="{Binding PreviousPageCommand}"/>
+        <KeyBinding Key="Right" Command="{Binding NextPageCommand}"/>
+        <KeyBinding Key="Left" Command="{Binding PreviousPageCommand}"/>
+        <KeyBinding Key="Home" Command="{Binding JumpToBeginningCommand}"/>
+        <KeyBinding Key="End" Command="{Binding JumpToEndCommand}"/>
+        <KeyBinding Key="Add" Modifiers="Control" Command="{Binding IncreaseFontSizeCommand}"/>
+        <KeyBinding Key="Subtract" Modifiers="Control" Command="{Binding DecreaseFontSizeCommand}"/>
+        <KeyBinding Key="OemPlus" Modifiers="Control" Command="{Binding IncreaseFontSizeCommand}"/>
+        <KeyBinding Key="OemMinus" Modifiers="Control" Command="{Binding DecreaseFontSizeCommand}"/>
+        <KeyBinding Key="T" Modifiers="Control" Command="{Binding ToggleThemeCommand}"/>
+    </Window.InputBindings>
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolConverter"/>
 
@@ -184,6 +204,12 @@
                         <Button Content="导入本地小说"
                                 Style="{StaticResource SideMenuButton}"
                                 Command="{Binding ImportLocalBookCommand}"/>
+                        <Button Content="打开选中小说"
+                                Style="{StaticResource SideMenuButton}"
+                                Command="{Binding OpenSelectedBookCommand}"/>
+                        <Button Content="删除选中小说"
+                                Style="{StaticResource SideMenuButton}"
+                                Command="{Binding DeleteSelectedBookCommand}"/>
                         <Button Content="返回书架"
                                 Style="{StaticResource SideMenuButton}"
                                 Command="{Binding BackToBookshelfCommand}"/>
@@ -293,65 +319,132 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Orientation="Horizontal"
-                                    VerticalAlignment="Center"
-                                    Margin="0,0,0,16">
-                            <TextBlock Text="{Binding SelectedBook.Title}"
-                                       FontSize="22"
-                                       FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding ProgressDisplay}"
-                                       Margin="16,0,0,0"
-                                       Foreground="#7F8C8D"
-                                       VerticalAlignment="Center"/>
-                            <ProgressBar Width="160"
-                                         Height="12"
-                                         Margin="16,0,0,0"
-                                         Maximum="100"
-                                         Value="{Binding ProgressPercentage, Mode=OneWay}"/>
+                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
                             <StackPanel Orientation="Horizontal"
-                                        Margin="16,0,0,0"
                                         VerticalAlignment="Center">
-                                <TextBlock Text="每页字数:"
+                                <TextBlock Text="{Binding SelectedBook.Title, TargetNullValue=未选择书籍}"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding ProgressDisplay}"
+                                           Margin="16,0,0,0"
+                                           Foreground="#7F8C8D"
                                            VerticalAlignment="Center"/>
-                                <TextBox Width="60"
-                                         Margin="6,0,0,0"
-                                         Text="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"/>
+                                <ProgressBar Width="160"
+                                             Height="12"
+                                             Margin="16,0,0,0"
+                                             Maximum="100"
+                                             Value="{Binding ProgressPercentage, Mode=OneWay}"/>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="16,0,0,0"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="每页字数:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#7F8C8D"/>
+                                    <TextBox Width="64"
+                                             Margin="6,0,0,0"
+                                             TextAlignment="Center"
+                                             Text="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center">
+                                <ToggleButton Content="夜间模式"
+                                              Padding="12,4"
+                                              IsChecked="{Binding UseDarkTheme, Mode=TwoWay}"/>
+                                <Button Content="Aa+"
+                                        Margin="8,0,0,0"
+                                        Padding="12,4"
+                                        Command="{Binding IncreaseFontSizeCommand}"/>
+                                <Button Content="Aa-"
+                                        Margin="8,0,0,0"
+                                        Padding="12,4"
+                                        Command="{Binding DecreaseFontSizeCommand}"/>
+                                <Button Content="字多"
+                                        Margin="8,0,0,0"
+                                        Padding="12,4"
+                                        Command="{Binding IncreasePageSizeCommand}"/>
+                                <Button Content="字少"
+                                        Margin="8,0,0,0"
+                                        Padding="12,4"
+                                        Command="{Binding DecreasePageSizeCommand}"/>
+                                <Button Content="重置"
+                                        Margin="8,0,0,0"
+                                        Padding="12,4"
+                                        Command="{Binding ResetReaderPreferencesCommand}"/>
+                            </StackPanel>
+                        </Grid>
 
                         <Border Grid.Row="1"
-                                Background="#FBFCFE"
+                                Background="{Binding ReaderBackground}"
                                 BorderBrush="#E0E6ED"
                                 BorderThickness="1"
                                 CornerRadius="6">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <TextBlock Text="{Binding PageContent}"
-                                           FontSize="16"
+                                           FontSize="{Binding ReaderFontSize}"
+                                           Foreground="{Binding ReaderForeground}"
                                            TextWrapping="Wrap"
-                                           LineHeight="26"
+                                           LineHeight="{Binding ReaderLineHeight}"
                                            Padding="24"/>
                             </ScrollViewer>
                         </Border>
 
-                        <StackPanel Grid.Row="2"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Right"
-                                    Margin="0,16,0,0">
-                            <Button Content="上一页"
-                                    Width="90"
-                                    Height="32"
-                                    Margin="0,0,10,0"
-                                    Command="{Binding PreviousPageCommand}"/>
-                            <Button Content="下一页"
-                                    Width="90"
-                                    Height="32"
-                                    Margin="0,0,10,0"
-                                    Command="{Binding NextPageCommand}"/>
-                            <Button Content="返回书架"
-                                    Width="100"
-                                    Height="32"
-                                    Command="{Binding BackToBookshelfCommand}"/>
-                        </StackPanel>
+                        <Grid Grid.Row="2"
+                              Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ProgressDisplay}"
+                                           Foreground="#7F8C8D"/>
+                                <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0:F1}%}"
+                                           Margin="16,0,0,0"
+                                           Foreground="#7F8C8D"/>
+                                <TextBlock Text="{Binding TotalLength, StringFormat=总字数 {0:N0}}"
+                                           Margin="16,0,0,0"
+                                           Foreground="#7F8C8D"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Right">
+                                <Button Content="回到开头"
+                                        Width="90"
+                                        Height="32"
+                                        Command="{Binding JumpToBeginningCommand}"/>
+                                <Button Content="跳至结尾"
+                                        Width="90"
+                                        Margin="10,0,0,0"
+                                        Height="32"
+                                        Command="{Binding JumpToEndCommand}"/>
+                                <Button Content="上一页"
+                                        Width="90"
+                                        Margin="10,0,0,0"
+                                        Height="32"
+                                        Command="{Binding PreviousPageCommand}"/>
+                                <Button Content="下一页"
+                                        Width="90"
+                                        Margin="10,0,0,0"
+                                        Height="32"
+                                        Command="{Binding NextPageCommand}"/>
+                                <Button Content="返回书架"
+                                        Width="100"
+                                        Margin="10,0,0,0"
+                                        Height="32"
+                                        Command="{Binding BackToBookshelfCommand}"/>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
 
                     <!-- Settings Placeholder -->
@@ -366,19 +459,38 @@
                             </Style>
                         </Grid.Style>
 
-                        <StackPanel HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="设置功能开发中"
+                        <StackPanel Margin="0,40,0,0"
+                                    Width="420"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Top">
+                            <TextBlock Text="阅读器设置"
                                        FontSize="20"
-                                       FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="敬请期待全局热键、伪装模式与主题定制等配置项。"
+                                       FontWeight="SemiBold"/>
+                            <CheckBox Content="启动时自动恢复上次阅读位置"
+                                      Margin="0,12,0,0"
+                                      FontSize="14"
+                                      IsChecked="{Binding AutoResumeLastBook, Mode=TwoWay}"/>
+                            <CheckBox Content="夜间模式"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"
+                                      IsChecked="{Binding UseDarkTheme, Mode=TwoWay}"/>
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="0,8,0,0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="默认每页字数:"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Width="80"
+                                         Margin="8,0,0,0"
+                                         TextAlignment="Center"
+                                         Text="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <TextBlock Text="更多高级功能（全局热键、伪装模式、书源管理等）将在后续迭代中陆续上线。"
                                        Margin="0,12,0,0"
-                                       Foreground="#7F8C8D"
-                                       TextAlignment="Center"/>
+                                       TextWrapping="Wrap"
+                                       Foreground="#7F8C8D"/>
                         </StackPanel>
                     </Grid>
-                    </Grid>
+                </Grid>
                 </Border>
             </Grid>
 
@@ -393,11 +505,11 @@
                                Foreground="#7F8C8D"/>
                     <StackPanel Orientation="Horizontal"
                                 DockPanel.Dock="Right">
-                        <TextBlock Text="快捷键: Ctrl+O 导入（计划中）"
+                        <TextBlock Text="快捷键: Ctrl+O 导入 | Ctrl+S 保存 | Ctrl+T 夜间模式"
                                    Foreground="#95A5A6"
-                                   Margin="0,0,12,0"
                                    VerticalAlignment="Center"/>
                         <TextBlock Text="版本 v0.1.0"
+                                   Margin="12,0,0,0"
                                    Foreground="#95A5A6"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
