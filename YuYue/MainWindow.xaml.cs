@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,6 +20,21 @@ namespace YuYue;
 public partial class MainWindow : Window
 {
     private const int WmHotKey = 0x0312;
+    
+    // Windows API for resizing
+    private const int WM_SYSCOMMAND = 0x112;
+    private const int SC_SIZE = 0xF000;
+    private const int WMSZ_LEFT = 1;
+    private const int WMSZ_RIGHT = 2;
+    private const int WMSZ_TOP = 3;
+    private const int WMSZ_TOPLEFT = 4;
+    private const int WMSZ_TOPRIGHT = 5;
+    private const int WMSZ_BOTTOM = 6;
+    private const int WMSZ_BOTTOMLEFT = 7;
+    private const int WMSZ_BOTTOMRIGHT = 8;
+    
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     private readonly MainViewModel _viewModel;
     private readonly HotKeyService _hotKeyService = new();
@@ -85,6 +101,7 @@ public partial class MainWindow : Window
             if (_viewModel.IsBorderless)
             {
                 BorderlessControlPanel.Visibility = Visibility.Collapsed;
+                // 左侧菜单在无边框模式下始终隐藏，不需要在这里处理
                 if (ReaderBottomNav != null)
                 {
                     ReaderBottomNav.Visibility = Visibility.Collapsed;
@@ -229,13 +246,13 @@ public partial class MainWindow : Window
         {
             // 无边框模式：背景全透明，只显示文字内容
             // 注意：AllowsTransparency 和 WindowStyle 在 XAML 中已设置，不能在运行时更改
-            ResizeMode = ResizeMode.NoResize;
+            ResizeMode = ResizeMode.CanResizeWithGrip; // 允许调整窗口大小
             Background = System.Windows.Media.Brushes.Transparent;
             Effect = null;
             
-            // 隐藏所有UI元素
+            // 隐藏所有UI元素（包括左侧菜单）
             TitleBarBorder.Visibility = Visibility.Collapsed;
-            LeftMenuBorder.Visibility = Visibility.Collapsed;
+            LeftMenuBorder.Visibility = Visibility.Collapsed; // 初始隐藏左侧菜单
             StatusBarBorder.Visibility = Visibility.Collapsed;
             ReaderTopBar.Visibility = Visibility.Collapsed;
             ReaderSidePanel.Visibility = Visibility.Collapsed;
@@ -343,8 +360,16 @@ public partial class MainWindow : Window
     {
         if (_viewModel.IsBorderless)
         {
+            // 获取鼠标位置
+            System.Windows.Point position = e.GetPosition(this);
+            int resizeDirection = GetResizeDirection(position);
+            
+            // 更新鼠标光标
+            Cursor = GetResizeCursor(resizeDirection);
+            
             // 鼠标移动时显示控制面板和底部导航按钮
             BorderlessControlPanel.Visibility = Visibility.Visible;
+            // 左侧菜单在无边框模式下始终隐藏，不显示
             if (ReaderBottomNav != null)
             {
                 ReaderBottomNav.Visibility = Visibility.Visible;
@@ -353,17 +378,37 @@ public partial class MainWindow : Window
             // 重置隐藏计时器
             _borderlessHideTimer?.Stop();
             _borderlessHideTimer?.Start();
+        }
+        else
+        {
+            // 非无边框模式，恢复默认光标
+            Cursor = System.Windows.Input.Cursors.Arrow;
+        }
+    }
+    
+    private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_viewModel.IsBorderless)
+        {
+            // 获取鼠标位置
+            System.Windows.Point position = e.GetPosition(this);
+            int resizeDirection = GetResizeDirection(position);
             
-            // 无边框模式下，按住左键拖动窗口
-            if (e.LeftButton == MouseButtonState.Pressed)
+            // 如果在边缘，开始调整大小
+            if (resizeDirection != 0)
             {
+                ResizeWindow(resizeDirection);
+            }
+            else
+            {
+                // 如果不在边缘，拖动窗口
                 try
                 {
                     DragMove();
                 }
                 catch
                 {
-                    // 忽略拖动异常（例如在窗口最大化时）
+                    // 忽略拖动异常
                 }
             }
         }
@@ -469,5 +514,62 @@ public partial class MainWindow : Window
     private void ExitBorderless_Click(object sender, RoutedEventArgs e)
     {
         _viewModel.IsBorderless = false;
+    }
+    
+    private void LeftMenuDragArea_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // 拖动窗口
+        if (e.ClickCount == 1)
+        {
+            try
+            {
+                DragMove();
+            }
+            catch
+            {
+                // 忽略拖动异常
+            }
+        }
+    }
+    
+    private void ResizeWindow(int direction)
+    {
+        if (_hwndSource?.Handle == null)
+            return;
+            
+        SendMessage(_hwndSource.Handle, WM_SYSCOMMAND, (IntPtr)(SC_SIZE + direction), IntPtr.Zero);
+    }
+    
+    private int GetResizeDirection(System.Windows.Point position)
+    {
+        const int resizeBorderThickness = 8;
+        
+        bool isLeft = position.X <= resizeBorderThickness;
+        bool isRight = position.X >= ActualWidth - resizeBorderThickness;
+        bool isTop = position.Y <= resizeBorderThickness;
+        bool isBottom = position.Y >= ActualHeight - resizeBorderThickness;
+        
+        if (isTop && isLeft) return WMSZ_TOPLEFT;
+        if (isTop && isRight) return WMSZ_TOPRIGHT;
+        if (isBottom && isLeft) return WMSZ_BOTTOMLEFT;
+        if (isBottom && isRight) return WMSZ_BOTTOMRIGHT;
+        if (isTop) return WMSZ_TOP;
+        if (isBottom) return WMSZ_BOTTOM;
+        if (isLeft) return WMSZ_LEFT;
+        if (isRight) return WMSZ_RIGHT;
+        
+        return 0;
+    }
+    
+    private System.Windows.Input.Cursor GetResizeCursor(int direction)
+    {
+        return direction switch
+        {
+            WMSZ_LEFT or WMSZ_RIGHT => System.Windows.Input.Cursors.SizeWE,
+            WMSZ_TOP or WMSZ_BOTTOM => System.Windows.Input.Cursors.SizeNS,
+            WMSZ_TOPLEFT or WMSZ_BOTTOMRIGHT => System.Windows.Input.Cursors.SizeNWSE,
+            WMSZ_TOPRIGHT or WMSZ_BOTTOMLEFT => System.Windows.Input.Cursors.SizeNESW,
+            _ => System.Windows.Input.Cursors.Arrow
+        };
     }
 }

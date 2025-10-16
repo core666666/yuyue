@@ -120,7 +120,8 @@
             CornerRadius="12"
             BorderThickness="1"
             BorderBrush="#E0E6ED"
-            MouseMove="MainWindow_MouseMove">
+            MouseMove="MainWindow_MouseMove"
+            MouseLeftButtonDown="MainWindow_MouseLeftButtonDown">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>
@@ -206,14 +207,22 @@
                         Padding="18"
                         CornerRadius="0,0,0,12">
                     <StackPanel>
-                        <TextBlock Text="沉浸阅读"
-                                   Foreground="#BDC3C7"
-                                   FontSize="12"/>
-                        <TextBlock Text="碎片化小说阅读"
-                                   Foreground="White"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Margin="0,8,0,20"/>
+                        <!-- 可拖动标题区域 -->
+                        <Border Background="Transparent"
+                                Padding="0,0,0,10"
+                                MouseLeftButtonDown="LeftMenuDragArea_MouseLeftButtonDown"
+                                Cursor="SizeAll">
+                            <StackPanel>
+                                <TextBlock Text="沉浸阅读"
+                                           Foreground="#BDC3C7"
+                                           FontSize="12"/>
+                                <TextBlock Text="碎片化小说阅读"
+                                           Foreground="White"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Margin="0,8,0,10"/>
+                            </StackPanel>
+                        </Border>
 
                         <Button Content="导入本地小说"
                                 Style="{StaticResource SideMenuButton}"
