@@ -82,8 +82,8 @@
                             </Grid.ColumnDefinitions>
                             <Slider x:Name="SliderInterval"
                                     Grid.Column="0"
-                                    Minimum="3" Maximum="300" 
-                                    Value="10"
+                                    Minimum="1" Maximum="120" 
+                                    Value="8"
                                     TickFrequency="1" 
                                     IsSnapToTickEnabled="True"
                                     VerticalAlignment="Center"/>
@@ -111,9 +111,9 @@
                             </Grid.ColumnDefinitions>
                             <Slider x:Name="SliderSpeed"
                                     Grid.Column="0"
-                                    Minimum="10" Maximum="500" 
+                                    Minimum="1" Maximum="50" 
                                     Value="50"
-                                    TickFrequency="10" 
+                                    TickFrequency="3" 
                                     IsSnapToTickEnabled="True"
                                     VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" 
@@ -127,13 +127,13 @@
                         <TextBlock Text="适用于平滑滚动模式，数值越大滚动越快"
                                    Style="{StaticResource DescText}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="慢速 (30)" Click="SetSpeed_Click" Tag="30" 
+                            <Button Content="慢速 (2)" Click="SetSpeed_Click" Tag="2" 
                                     Padding="8,4" Margin="0,0,8,0"/>
-                            <Button Content="中速 (50)" Click="SetSpeed_Click" Tag="50"
+                            <Button Content="中速 (10)" Click="SetSpeed_Click" Tag="10"
                                     Padding="8,4" Margin="0,0,8,0"/>
-                            <Button Content="快速 (100)" Click="SetSpeed_Click" Tag="100"
+                            <Button Content="快速 (30)" Click="SetSpeed_Click" Tag="30"
                                     Padding="8,4" Margin="0,0,8,0"/>
-                            <Button Content="极速 (200)" Click="SetSpeed_Click" Tag="200"
+                            <Button Content="极速 (50)" Click="SetSpeed_Click" Tag="50"
                                     Padding="8,4"/>
                         </StackPanel>
                     </StackPanel>
