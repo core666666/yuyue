@@ -85,6 +85,10 @@ public partial class MainWindow : Window
             if (_viewModel.IsBorderless)
             {
                 BorderlessControlPanel.Visibility = Visibility.Collapsed;
+                if (ReaderBottomNav != null)
+                {
+                    ReaderBottomNav.Visibility = Visibility.Collapsed;
+                }
                 _borderlessHideTimer.Stop();
             }
         };
@@ -256,9 +260,20 @@ public partial class MainWindow : Window
             ReaderContentBorder.BorderThickness = new Thickness(0);
             ReaderContentBorder.Margin = new Thickness(0);
             
-            // ScrollViewer 和 TextBlock 也设置为透明
+            // ScrollViewer 隐藏滚动条并设置为透明
+            ReaderScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Hidden;
             ReaderScrollViewer.Background = System.Windows.Media.Brushes.Transparent;
+            
+            // TextBlock 也设置为透明，并调整内容高度使一屏完全展示
             ReaderTextBlock.Background = System.Windows.Media.Brushes.Transparent;
+            ReaderTextBlock.Height = ActualHeight; // 设置为窗口高度
+            ReaderTextBlock.VerticalAlignment = VerticalAlignment.Stretch;
+            
+            // 隐藏底部导航按钮区域
+            if (ReaderBottomNav != null)
+            {
+                ReaderBottomNav.Visibility = Visibility.Collapsed;
+            }
             
             // 显示无边框控制面板（初始隐藏，鼠标悬浮显示）
             BorderlessControlPanel.Visibility = Visibility.Collapsed;
@@ -304,9 +319,20 @@ public partial class MainWindow : Window
             ReaderContentBorder.BorderThickness = new Thickness(1);
             ReaderContentBorder.Margin = new Thickness(0, 0, 4, 0);
             
-            // 恢复 ScrollViewer 和 TextBlock 背景
+            // 恢复 ScrollViewer 滚动条和背景
+            ReaderScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
             ReaderScrollViewer.ClearValue(System.Windows.Controls.ScrollViewer.BackgroundProperty);
+            
+            // 恢复 TextBlock 背景和高度
             ReaderTextBlock.ClearValue(System.Windows.Controls.TextBlock.BackgroundProperty);
+            ReaderTextBlock.ClearValue(System.Windows.Controls.TextBlock.HeightProperty);
+            ReaderTextBlock.ClearValue(System.Windows.Controls.TextBlock.VerticalAlignmentProperty);
+            
+            // 显示底部导航按钮区域
+            if (ReaderBottomNav != null)
+            {
+                ReaderBottomNav.Visibility = Visibility.Visible;
+            }
             
             // 隐藏无边框控制面板
             BorderlessControlPanel.Visibility = Visibility.Collapsed;
@@ -317,8 +343,12 @@ public partial class MainWindow : Window
     {
         if (_viewModel.IsBorderless)
         {
-            // 鼠标移动时显示控制面板
+            // 鼠标移动时显示控制面板和底部导航按钮
             BorderlessControlPanel.Visibility = Visibility.Visible;
+            if (ReaderBottomNav != null)
+            {
+                ReaderBottomNav.Visibility = Visibility.Visible;
+            }
             
             // 重置隐藏计时器
             _borderlessHideTimer?.Stop();
