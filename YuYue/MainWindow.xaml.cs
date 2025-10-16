@@ -187,6 +187,11 @@ public partial class MainWindow : Window
         {
             Dispatcher.Invoke(HandleCamouflageModeChanged);
         }
+        else if (e.PropertyName == nameof(MainViewModel.ScrollOffsetDelta))
+        {
+            // 处理平滑滚动
+            Dispatcher.Invoke(HandleSmoothScroll);
+        }
     }
     
     private void ViewModel_PageChanged(object? sender, EventArgs e)
@@ -530,6 +535,44 @@ public partial class MainWindow : Window
     {
         // 伪装窗口关闭时，恢复主窗口
         _viewModel.IsCamouflageMode = false;
+    }
+    
+    private void HandleSmoothScroll()
+    {
+        if (ReaderScrollViewer == null || _viewModel.ScrollOffsetDelta <= 0)
+        {
+            return;
+        }
+        
+        // 获取当前滚动位置
+        var currentOffset = ReaderScrollViewer.VerticalOffset;
+        var maxOffset = ReaderScrollViewer.ScrollableHeight;
+        
+        // 计算新的滚动位置，并四舍五入到整数像素，避免文字抖动
+        var newOffset = Math.Round(currentOffset + _viewModel.ScrollOffsetDelta);
+        
+        // 检查是否到达底部
+        if (newOffset >= maxOffset)
+        {
+            // 到达底部，翻到下一页
+            if (_viewModel.NextPageCommand.CanExecute(null))
+            {
+                _viewModel.NextPageCommand.Execute(null);
+                // 翻页后滚动到顶部
+                ReaderScrollViewer.ScrollToTop();
+            }
+            else
+            {
+                // 已经是最后一页，停止自动滚动
+                _viewModel.IsAutoPageEnabled = false;
+                _viewModel.StatusMessage = "已到达文章末尾，自动滚动已停止";
+            }
+        }
+        else
+        {
+            // 平滑滚动到新位置（整数像素）
+            ReaderScrollViewer.ScrollToVerticalOffset(newOffset);
+        }
     }
     
     private void ExitBorderless_Click(object sender, RoutedEventArgs e)

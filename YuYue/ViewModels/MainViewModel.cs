@@ -203,6 +203,10 @@ public partial class MainViewModel : ObservableObject
     
     [ObservableProperty]
     private List<HotkeyConfig> hotkeyConfigs = HotkeyConfig.GetDefaultConfigs();
+    
+    // 用于平滑滚动的偏移增量
+    [ObservableProperty]
+    private double scrollOffsetDelta;
 
     public string CamouflageStatus => SelectedCamouflage is null
         ? "请选择伪装模板"
@@ -1025,10 +1029,10 @@ public partial class MainViewModel : ObservableObject
         }
         else
         {
-            // 平滑滚动模式
+            // 平滑滚动模式 - 使用更短的间隔实现流畅滚动
             _autoPageTimer = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(50) // 每50ms触发一次
+                Interval = TimeSpan.FromMilliseconds(16) // 约60fps，更流畅
             };
             _autoPageTimer.Tick += OnSmoothScrollTick;
             _autoPageTimer.Start();
@@ -1051,27 +1055,19 @@ public partial class MainViewModel : ObservableObject
             return;
         }
         
-        // 根据速度计算每次滚动的字符数
-        // 假设每行约40个字符，行高约为字体大小的1.6倍
-        var charsPerLine = 40;
-        var linesPerSecond = AutoScrollSpeed / (ReaderFontSize * 1.6);
-        var charsPerTick = (int)(charsPerLine * linesPerSecond * 0.05); // 0.05秒一次
+        // 计算每次滚动的像素距离
+        // AutoScrollSpeed 是像素/秒，每16ms触发一次
+        var pixelsPerTick = AutoScrollSpeed * 0.016; // 16ms = 0.016秒
         
-        if (charsPerTick < 1) charsPerTick = 1;
-        
-        var newOffset = Math.Min(CurrentOffset + charsPerTick, Math.Max(TotalLength - 1, 0));
-        if (newOffset >= TotalLength - PageSize)
+        // 确保每次至少滚动1像素，避免速度太慢时不滚动
+        if (pixelsPerTick < 1.0)
         {
-            // 到达末尾，停止滚动
-            StopAutoScroll();
-            IsAutoPageEnabled = false;
-            StatusMessage = "已到达文章末尾，自动滚动已停止";
-            return;
+            pixelsPerTick = 1.0;
         }
         
-        CurrentOffset = newOffset;
-        UpdatePageContent();
-        OnPropertyChanged(nameof(ScrollOffset));
+        // 触发滚动偏移更新事件，让 UI 层处理实际滚动
+        ScrollOffsetDelta = pixelsPerTick;
+        OnPropertyChanged(nameof(ScrollOffsetDelta));
     }
     
     partial void OnAutoPageIntervalChanged(int value)

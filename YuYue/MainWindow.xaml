@@ -781,7 +781,8 @@
                                 </Border.Style>
                                 <ScrollViewer x:Name="ReaderScrollViewer" 
                                               VerticalScrollBarVisibility="Auto"
-                                              Background="Transparent">
+                                              Background="Transparent"
+                                              CanContentScroll="False">
                                     <TextBlock x:Name="ReaderTextBlock"
                                                Text="{Binding PageContent}"
                                                FontSize="{Binding ReaderFontSize}"
@@ -789,7 +790,12 @@
                                                TextWrapping="Wrap"
                                                LineHeight="{Binding ReaderLineHeight}"
                                                Padding="24"
-                                               Background="Transparent"/>
+                                               Background="Transparent"
+                                               TextOptions.TextFormattingMode="Display"
+                                               TextOptions.TextRenderingMode="ClearType"
+                                               TextOptions.TextHintingMode="Fixed"
+                                               UseLayoutRounding="True"
+                                               SnapsToDevicePixels="True"/>
                                 </ScrollViewer>
                             </Border>
                             
