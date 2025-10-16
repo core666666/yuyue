@@ -323,6 +323,19 @@ public partial class MainWindow : Window
             // 重置隐藏计时器
             _borderlessHideTimer?.Stop();
             _borderlessHideTimer?.Start();
+            
+            // 无边框模式下，按住左键拖动窗口
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                try
+                {
+                    DragMove();
+                }
+                catch
+                {
+                    // 忽略拖动异常（例如在窗口最大化时）
+                }
+            }
         }
     }
 
