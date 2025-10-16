@@ -111,9 +111,9 @@
                             </Grid.ColumnDefinitions>
                             <Slider x:Name="SliderSpeed"
                                     Grid.Column="0"
-                                    Minimum="1" Maximum="50" 
+                                    Minimum="1" Maximum="100" 
                                     Value="50"
-                                    TickFrequency="3" 
+                                    TickFrequency="1" 
                                     IsSnapToTickEnabled="True"
                                     VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" 
@@ -127,13 +127,15 @@
                         <TextBlock Text="适用于平滑滚动模式，数值越大滚动越快"
                                    Style="{StaticResource DescText}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="慢速 (2)" Click="SetSpeed_Click" Tag="2" 
+                            <Button Content="极慢 (1)" Click="SetSpeed_Click" Tag="1" 
                                     Padding="8,4" Margin="0,0,8,0"/>
-                            <Button Content="中速 (10)" Click="SetSpeed_Click" Tag="10"
+                            <Button Content="慢速 (5)" Click="SetSpeed_Click" Tag="5" 
                                     Padding="8,4" Margin="0,0,8,0"/>
-                            <Button Content="快速 (30)" Click="SetSpeed_Click" Tag="30"
+                            <Button Content="中速 (20)" Click="SetSpeed_Click" Tag="20"
                                     Padding="8,4" Margin="0,0,8,0"/>
-                            <Button Content="极速 (50)" Click="SetSpeed_Click" Tag="50"
+                            <Button Content="快速 (50)" Click="SetSpeed_Click" Tag="50"
+                                    Padding="8,4" Margin="0,0,8,0"/>
+                            <Button Content="极速 (100)" Click="SetSpeed_Click" Tag="100"
                                     Padding="8,4"/>
                         </StackPanel>
                     </StackPanel>

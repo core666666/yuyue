@@ -1104,10 +1104,11 @@ public partial class MainViewModel : ObservableObject
         // AutoScrollSpeed 是像素/秒，每16ms触发一次
         var pixelsPerTick = AutoScrollSpeed * 0.016; // 16ms = 0.016秒
         
-        // 确保每次至少滚动1像素，避免速度太慢时不滚动
-        if (pixelsPerTick < 1.0)
+        // 对于非常慢的速度（小于1px/tick），使用累积方式
+        // 这样即使速度很慢也能正常滚动
+        if (pixelsPerTick < 0.1)
         {
-            pixelsPerTick = 1.0;
+            pixelsPerTick = 0.1; // 最小滚动量，避免完全不动
         }
         
         // 触发滚动偏移更新事件，让 UI 层处理实际滚动
@@ -1138,8 +1139,15 @@ public partial class MainViewModel : ObservableObject
     
     partial void OnAutoScrollSpeedChanged(int value)
     {
-        if (value < 10) AutoScrollSpeed = 10;
+        // 允许更低的速度，最小值为1
+        if (value < 1) AutoScrollSpeed = 1;
         if (value > 500) AutoScrollSpeed = 500;
+        
+        // 如果正在自动滚动，重新启动以应用新速度
+        if (IsAutoPageEnabled && AutoScrollMode == AutoScrollMode.SmoothScroll)
+        {
+            StartAutoScroll();
+        }
         
         _ = SavePreferencesAsync();
     }
@@ -1170,7 +1178,8 @@ public partial class MainViewModel : ObservableObject
         else
         {
             // 滚动模式：增加速度
-            AutoScrollSpeed = Math.Min(500, AutoScrollSpeed + 10);
+            var increment = AutoScrollSpeed < 10 ? 1 : 5; // 速度低时加1，高时加5
+            AutoScrollSpeed = Math.Min(500, AutoScrollSpeed + increment);
             StatusMessage = $"滚动速度：{AutoScrollSpeed}px/s";
         }
         
@@ -1192,8 +1201,9 @@ public partial class MainViewModel : ObservableObject
         }
         else
         {
-            // 滚动模式：减少速度
-            AutoScrollSpeed = Math.Max(10, AutoScrollSpeed - 10);
+            // 滚动模式：减少速度，最小值为1
+            var decrement = AutoScrollSpeed > 10 ? 5 : 1; // 速度高时减5，低时减1
+            AutoScrollSpeed = Math.Max(1, AutoScrollSpeed - decrement);
             StatusMessage = $"滚动速度：{AutoScrollSpeed}px/s";
         }
         
@@ -1205,7 +1215,7 @@ public partial class MainViewModel : ObservableObject
     }
     
     [RelayCommand]
-    private void OpenAutoScrollSettings()
+    private async Task OpenAutoScrollSettingsAsync()
     {
         var window = new Views.AutoScrollSettingsWindow(AutoScrollMode, AutoPageInterval, AutoScrollSpeed)
         {
@@ -1218,13 +1228,16 @@ public partial class MainViewModel : ObservableObject
             AutoPageInterval = window.Interval;
             AutoScrollSpeed = window.Speed;
             
+            // 保存设置到文件
+            await SavePreferencesAsync();
+            
             // 如果正在自动滚动，重新启动以应用新设置
             if (IsAutoPageEnabled)
             {
                 StartAutoScroll();
             }
             
-            StatusMessage = "自动滚动设置已更新";
+            StatusMessage = "自动滚动设置已更新并保存";
         }
     }
     

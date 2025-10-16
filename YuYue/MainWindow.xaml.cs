@@ -61,6 +61,9 @@ public partial class MainWindow : Window
     
     // 自动滚动内容追加控制
     private bool _isAppendingContent;
+    
+    // 累积的滚动偏移量（用于支持低速滚动）
+    private double _accumulatedScrollOffset;
 
     public ICommand HideToTrayCommand { get; }
 
@@ -204,7 +207,15 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(MainViewModel.IsAutoPageEnabled))
         {
             // 处理自动滚动模式的UI变化
-            Dispatcher.Invoke(HandleAutoScrollModeChanged);
+            Dispatcher.Invoke(() =>
+            {
+                HandleAutoScrollModeChanged();
+                // 重置累积的滚动偏移量
+                if (!_viewModel.IsAutoPageEnabled)
+                {
+                    _accumulatedScrollOffset = 0;
+                }
+            });
         }
     }
     
@@ -564,39 +575,50 @@ public partial class MainWindow : Window
         var maxOffset = ReaderScrollViewer.ScrollableHeight;
         var viewportHeight = ReaderScrollViewer.ViewportHeight;
         
-        // 计算新的滚动位置，并四舍五入到整数像素，避免文字抖动
-        var newOffset = Math.Round(currentOffset + _viewModel.ScrollOffsetDelta);
+        // 累积滚动偏移量（支持低速滚动）
+        // 不直接四舍五入，而是累积小数部分，当累积到>=1时才滚动
+        _accumulatedScrollOffset += _viewModel.ScrollOffsetDelta;
         
-        // 提前追加内容：当距离底部还有1.5个视口高度时就开始追加
-        // 这样可以避免滚动到底部时的卡顿和闪动
-        var distanceToBottom = maxOffset - currentOffset;
-        var shouldAppend = distanceToBottom < viewportHeight * 1.5 && !_isAppendingContent;
-        
-        if (shouldAppend && _viewModel.AppendNextPageCommand.CanExecute(null))
+        // 只有当累积量>=1像素时才实际滚动
+        if (_accumulatedScrollOffset >= 1.0)
         {
-            _isAppendingContent = true;
+            var scrollAmount = Math.Floor(_accumulatedScrollOffset);
+            _accumulatedScrollOffset -= scrollAmount; // 保留小数部分继续累积
             
-            // 追加下一页内容
-            _viewModel.AppendNextPageCommand.Execute(null);
+            var newOffset = currentOffset + scrollAmount;
             
-            // 等待一小段时间后允许下次追加
-            Dispatcher.InvokeAsync(() =>
+            // 提前追加内容：当距离底部还有1.5个视口高度时就开始追加
+            // 这样可以避免滚动到底部时的卡顿和闪动
+            var distanceToBottom = maxOffset - currentOffset;
+            var shouldAppend = distanceToBottom < viewportHeight * 1.5 && !_isAppendingContent;
+            
+            if (shouldAppend && _viewModel.AppendNextPageCommand.CanExecute(null))
             {
-                _isAppendingContent = false;
-            }, System.Windows.Threading.DispatcherPriority.Background);
-        }
-        
-        // 检查是否已经到达最底部（没有更多内容可追加）
-        if (newOffset >= maxOffset && !_viewModel.AppendNextPageCommand.CanExecute(null))
-        {
-            // 已经是最后一页，停止自动滚动
-            _viewModel.IsAutoPageEnabled = false;
-            _viewModel.StatusMessage = "已到达文章末尾，自动滚动已停止";
-        }
-        else
-        {
-            // 平滑滚动到新位置（整数像素）
-            ReaderScrollViewer.ScrollToVerticalOffset(Math.Min(newOffset, ReaderScrollViewer.ScrollableHeight));
+                _isAppendingContent = true;
+                
+                // 追加下一页内容
+                _viewModel.AppendNextPageCommand.Execute(null);
+                
+                // 等待一小段时间后允许下次追加
+                Dispatcher.InvokeAsync(() =>
+                {
+                    _isAppendingContent = false;
+                }, System.Windows.Threading.DispatcherPriority.Background);
+            }
+            
+            // 检查是否已经到达最底部（没有更多内容可追加）
+            if (newOffset >= maxOffset && !_viewModel.AppendNextPageCommand.CanExecute(null))
+            {
+                // 已经是最后一页，停止自动滚动
+                _viewModel.IsAutoPageEnabled = false;
+                _viewModel.StatusMessage = "已到达文章末尾，自动滚动已停止";
+                _accumulatedScrollOffset = 0; // 重置累积量
+            }
+            else
+            {
+                // 平滑滚动到新位置（整数像素）
+                ReaderScrollViewer.ScrollToVerticalOffset(Math.Min(newOffset, ReaderScrollViewer.ScrollableHeight));
+            }
         }
     }
     
