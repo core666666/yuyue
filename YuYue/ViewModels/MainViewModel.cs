@@ -623,6 +623,48 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanGoToNextPage() => TotalLength > 0 && CurrentOffset + PageSize < TotalLength;
 
+    [RelayCommand(CanExecute = nameof(CanAppendNextPage))]
+    private void AppendNextPage()
+    {
+        if (_fullContent.Length == 0)
+        {
+            return;
+        }
+
+        // 计算下一页的起始位置
+        var nextOffset = CurrentOffset + PageSize;
+        if (nextOffset >= TotalLength)
+        {
+            return;
+        }
+
+        // 计算要追加的内容长度
+        var appendLength = Math.Min(PageSize, TotalLength - nextOffset);
+        if (appendLength <= 0)
+        {
+            return;
+        }
+
+        // 追加下一页内容到当前显示的内容
+        var nextContent = _fullContent.Substring(nextOffset, appendLength);
+        PageContent += nextContent;
+
+        // 更新当前偏移量（但不触发 PageChanged 事件，因为不是翻页）
+        CurrentOffset = nextOffset;
+
+        if (_currentBook is not null)
+        {
+            _currentBook.CurrentOffset = CurrentOffset;
+            _currentBook.TotalLength = TotalLength;
+            _currentBook.LastOpenedUtc = DateTime.UtcNow;
+        }
+
+        RaiseProgressProperties();
+        AppendNextPageCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanAppendNextPage() => TotalLength > 0 && CurrentOffset + PageSize < TotalLength;
+
     [RelayCommand]
     private void JumpToBeginning()
     {
@@ -1011,6 +1053,9 @@ public partial class MainViewModel : ObservableObject
         {
             StopAutoScroll();
         }
+        
+        // 通知UI更新滚动条显示状态
+        OnPropertyChanged(nameof(IsAutoPageEnabled));
     }
     
     private void StartAutoScroll()

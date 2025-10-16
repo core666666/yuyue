@@ -3,11 +3,11 @@
   "WorkspaceRootPath": "D:\\code\\selfcode\\yuyue\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Administrator\\AppData\\Local\\Temp\\.vsdbgsrc\\1b77cb146b3dc6f60ca3b7de619b68fc3904b4f03155b255fa425d7d7bd36ae9\\PropertyPathWorker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{3D27B9F7-5663-B710-FCCA-60D34908C29F}|YuYue\\YuYue.csproj|d:\\code\\selfcode\\yuyue\\yuyue\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{3D27B9F7-5663-B710-FCCA-60D34908C29F}|YuYue\\YuYue.csproj|solutionrelative:yuyue\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Administrator\\AppData\\Local\\Temp\\.vsdbgsrc\\1b77cb146b3dc6f60ca3b7de619b68fc3904b4f03155b255fa425d7d7bd36ae9\\PropertyPathWorker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3D27B9F7-5663-B710-FCCA-60D34908C29F}|YuYue\\YuYue.csproj|d:\\code\\selfcode\\yuyue\\yuyue\\examples\\quicktest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -21,17 +21,17 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "MainViewModel.cs",
               "DocumentMoniker": "D:\\code\\selfcode\\yuyue\\YuYue\\ViewModels\\MainViewModel.cs",
               "RelativeDocumentMoniker": "YuYue\\ViewModels\\MainViewModel.cs",
               "ToolTip": "D:\\code\\selfcode\\yuyue\\YuYue\\ViewModels\\MainViewModel.cs",
               "RelativeToolTip": "YuYue\\ViewModels\\MainViewModel.cs",
-              "ViewState": "AgIAABwAAAAAAAAAAAAAwKwDAAAEAAAAAAAAAA==",
+              "ViewState": "AgIAACMAAAAAAAAAAAAYwDUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-15T09:09:41.514Z",
               "EditorCaption": ""
@@ -51,11 +51,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "PropertyPathWorker.cs",
               "DocumentMoniker": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\.vsdbgsrc\\1b77cb146b3dc6f60ca3b7de619b68fc3904b4f03155b255fa425d7d7bd36ae9\\PropertyPathWorker.cs",
               "ToolTip": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\.vsdbgsrc\\1b77cb146b3dc6f60ca3b7de619b68fc3904b4f03155b255fa425d7d7bd36ae9\\PropertyPathWorker.cs",
-              "ViewState": "AgIAAKAEAAAAAAAAAAAQwL0EAABVAAAAAQAAAA==",
+              "ViewState": "AgIAAJ0EAAAAAAAAAAAQwK0EAAAWAAAAAQAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-15T02:51:01.092Z",
               "EditorCaption": ""

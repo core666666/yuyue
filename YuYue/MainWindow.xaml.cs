@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using CommunityToolkit.Mvvm.Input;
+using YuYue.Models;
 using YuYue.Services;
 using YuYue.ViewModels;
 using YuYue.Views;
@@ -57,6 +58,9 @@ public partial class MainWindow : Window
     private double _widthBeforeBorderless;
     private double _heightBeforeBorderless;
     private WindowState _stateBeforeBorderless;
+    
+    // 自动滚动内容追加控制
+    private bool _isAppendingContent;
 
     public ICommand HideToTrayCommand { get; }
 
@@ -181,7 +185,12 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName == nameof(MainViewModel.IsBorderless))
         {
-            Dispatcher.Invoke(ApplyBorderless);
+            Dispatcher.Invoke(() =>
+            {
+                ApplyBorderless();
+                // 切换无边框模式后，更新滚动条状态
+                HandleAutoScrollModeChanged();
+            });
         }
         else if (e.PropertyName == nameof(MainViewModel.IsCamouflageMode))
         {
@@ -191,6 +200,11 @@ public partial class MainWindow : Window
         {
             // 处理平滑滚动
             Dispatcher.Invoke(HandleSmoothScroll);
+        }
+        else if (e.PropertyName == nameof(MainViewModel.IsAutoPageEnabled))
+        {
+            // 处理自动滚动模式的UI变化
+            Dispatcher.Invoke(HandleAutoScrollModeChanged);
         }
     }
     
@@ -297,10 +311,11 @@ public partial class MainWindow : Window
             ReaderScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Hidden;
             ReaderScrollViewer.Background = System.Windows.Media.Brushes.Transparent;
             
-            // TextBlock 也设置为透明，并调整内容高度使一屏完全展示
+            // TextBlock 也设置为透明
             ReaderTextBlock.Background = System.Windows.Media.Brushes.Transparent;
-            ReaderTextBlock.Height = ActualHeight; // 设置为窗口高度
-            ReaderTextBlock.VerticalAlignment = VerticalAlignment.Stretch;
+            // 不设置固定高度，让内容根据文字自动调整，这样才能正常滚动
+            ReaderTextBlock.ClearValue(System.Windows.Controls.TextBlock.HeightProperty);
+            ReaderTextBlock.VerticalAlignment = VerticalAlignment.Top;
             
             // 隐藏底部导航按钮区域
             if (ReaderBottomNav != null)
@@ -547,31 +562,68 @@ public partial class MainWindow : Window
         // 获取当前滚动位置
         var currentOffset = ReaderScrollViewer.VerticalOffset;
         var maxOffset = ReaderScrollViewer.ScrollableHeight;
+        var viewportHeight = ReaderScrollViewer.ViewportHeight;
         
         // 计算新的滚动位置，并四舍五入到整数像素，避免文字抖动
         var newOffset = Math.Round(currentOffset + _viewModel.ScrollOffsetDelta);
         
-        // 检查是否到达底部
-        if (newOffset >= maxOffset)
+        // 提前追加内容：当距离底部还有1.5个视口高度时就开始追加
+        // 这样可以避免滚动到底部时的卡顿和闪动
+        var distanceToBottom = maxOffset - currentOffset;
+        var shouldAppend = distanceToBottom < viewportHeight * 1.5 && !_isAppendingContent;
+        
+        if (shouldAppend && _viewModel.AppendNextPageCommand.CanExecute(null))
         {
-            // 到达底部，翻到下一页
-            if (_viewModel.NextPageCommand.CanExecute(null))
+            _isAppendingContent = true;
+            
+            // 追加下一页内容
+            _viewModel.AppendNextPageCommand.Execute(null);
+            
+            // 等待一小段时间后允许下次追加
+            Dispatcher.InvokeAsync(() =>
             {
-                _viewModel.NextPageCommand.Execute(null);
-                // 翻页后滚动到顶部
-                ReaderScrollViewer.ScrollToTop();
-            }
-            else
-            {
-                // 已经是最后一页，停止自动滚动
-                _viewModel.IsAutoPageEnabled = false;
-                _viewModel.StatusMessage = "已到达文章末尾，自动滚动已停止";
-            }
+                _isAppendingContent = false;
+            }, System.Windows.Threading.DispatcherPriority.Background);
+        }
+        
+        // 检查是否已经到达最底部（没有更多内容可追加）
+        if (newOffset >= maxOffset && !_viewModel.AppendNextPageCommand.CanExecute(null))
+        {
+            // 已经是最后一页，停止自动滚动
+            _viewModel.IsAutoPageEnabled = false;
+            _viewModel.StatusMessage = "已到达文章末尾，自动滚动已停止";
         }
         else
         {
             // 平滑滚动到新位置（整数像素）
-            ReaderScrollViewer.ScrollToVerticalOffset(newOffset);
+            ReaderScrollViewer.ScrollToVerticalOffset(Math.Min(newOffset, ReaderScrollViewer.ScrollableHeight));
+        }
+    }
+    
+    private void HandleAutoScrollModeChanged()
+    {
+        if (ReaderScrollViewer == null)
+        {
+            return;
+        }
+        
+        // 无边框模式下始终隐藏滚动条
+        if (_viewModel.IsBorderless)
+        {
+            ReaderScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Hidden;
+            return;
+        }
+        
+        // 有边框模式下，根据自动滚动状态决定滚动条显示
+        if (_viewModel.IsAutoPageEnabled && _viewModel.AutoScrollMode == AutoScrollMode.SmoothScroll)
+        {
+            // 自动滚动模式：隐藏滚动条
+            ReaderScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Hidden;
+        }
+        else
+        {
+            // 非自动滚动模式：显示滚动条
+            ReaderScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
         }
     }
     
