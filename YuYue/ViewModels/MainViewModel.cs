@@ -166,6 +166,12 @@ public partial class MainViewModel : ObservableObject
     private int autoPageInterval = 10;
     
     [ObservableProperty]
+    private AutoScrollMode autoScrollMode = AutoScrollMode.DirectPage;
+    
+    [ObservableProperty]
+    private int autoScrollSpeed = 50;
+    
+    [ObservableProperty]
     private ObservableCollection<Chapter> chapters = new();
     
     [ObservableProperty]
@@ -357,6 +363,10 @@ public partial class MainViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            // 加载偏好设置
+            await LoadPreferencesAsync();
+            
+            // 加载书架
             Books = await _libraryService.LoadAsync();
         }
         finally
@@ -804,6 +814,85 @@ public partial class MainViewModel : ObservableObject
             StatusMessage = $"保存书架失败：{ex.Message}";
         }
     }
+    
+    public async Task LoadPreferencesAsync()
+    {
+        try
+        {
+            var prefs = await _preferencesService.LoadPreferencesAsync();
+            
+            // 应用偏好设置
+            ReaderFontSize = prefs.FontSize;
+            ReaderLineHeight = prefs.LineHeight;
+            ParagraphSpacing = prefs.ParagraphSpacing;
+            EnableFirstLineIndent = prefs.EnableFirstLineIndent;
+            FirstLineIndent = prefs.FirstLineIndent;
+            ColumnCount = prefs.ColumnCount;
+            PageSize = prefs.PageSize;
+            UseDarkTheme = prefs.UseDarkTheme;
+            AutoResumeLastBook = prefs.AutoResumeLastBook;
+            IsWindowTopmost = prefs.WindowTopmost;
+            WindowOpacity = prefs.WindowOpacity;
+            IsBorderless = prefs.BorderlessMode;
+            IsAutoStartEnabled = prefs.AutoStartEnabled;
+            IsAutoPageEnabled = prefs.AutoPageEnabled;
+            
+            // 自动滚动设置
+            AutoPageInterval = prefs.AutoPageInterval;
+            AutoScrollMode = prefs.AutoScrollMode;
+            AutoScrollSpeed = prefs.AutoScrollSpeed;
+            
+            // 热键配置
+            HotkeyConfigs = prefs.HotkeyConfigs;
+            
+            // 应用主题
+            var theme = Themes.FirstOrDefault(t => t.Name == prefs.SelectedThemeName);
+            if (theme != null)
+            {
+                SelectedTheme = theme;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"加载偏好设置失败：{ex.Message}";
+        }
+    }
+    
+    public async Task SavePreferencesAsync()
+    {
+        try
+        {
+            var prefs = new ReadingPreferences
+            {
+                FontSize = ReaderFontSize,
+                LineHeight = ReaderLineHeight,
+                ParagraphSpacing = ParagraphSpacing,
+                EnableFirstLineIndent = EnableFirstLineIndent,
+                FirstLineIndent = FirstLineIndent,
+                ColumnCount = ColumnCount,
+                PageSize = PageSize,
+                SelectedThemeName = SelectedTheme?.Name ?? "日间模式",
+                UseDarkTheme = UseDarkTheme,
+                AutoResumeLastBook = AutoResumeLastBook,
+                WindowTopmost = IsWindowTopmost,
+                WindowOpacity = WindowOpacity,
+                BorderlessMode = IsBorderless,
+                AutoStartEnabled = IsAutoStartEnabled,
+                AutoPageEnabled = IsAutoPageEnabled,
+                AutoPageInterval = AutoPageInterval,
+                AutoScrollMode = AutoScrollMode,
+                AutoScrollSpeed = AutoScrollSpeed,
+                ImmersiveModeEnabled = IsImmersiveMode,
+                HotkeyConfigs = HotkeyConfigs
+            };
+            
+            await _preferencesService.SavePreferencesAsync(prefs);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"保存偏好设置失败：{ex.Message}";
+        }
+    }
 
     private void RaiseProgressProperties()
     {
@@ -886,35 +975,215 @@ public partial class MainViewModel : ObservableObject
         SelectedTheme = Themes[nextIndex];
     }
     
-    // 自动翻页
+    // 自动翻页/滚动
     [RelayCommand]
     private void ToggleAutoPage()
     {
-        IsAutoPageEnabled = !IsAutoPageEnabled;
-        
+        // ToggleButton 会自动切换 IsAutoPageEnabled，所以这里只需要响应状态变化
         if (IsAutoPageEnabled)
         {
+            StartAutoScroll();
+            var modeText = AutoScrollMode == AutoScrollMode.DirectPage ? "翻页" : "滚动";
+            var speedText = AutoScrollMode == AutoScrollMode.DirectPage 
+                ? $"{AutoPageInterval}秒/页" 
+                : $"{AutoScrollSpeed}px/s";
+            StatusMessage = $"已开启自动{modeText}（{speedText}）";
+        }
+        else
+        {
+            StopAutoScroll();
+            StatusMessage = "已关闭自动翻页";
+        }
+    }
+    
+    // 监听 IsAutoPageEnabled 变化
+    partial void OnIsAutoPageEnabledChanged(bool value)
+    {
+        if (value)
+        {
+            StartAutoScroll();
+        }
+        else
+        {
+            StopAutoScroll();
+        }
+    }
+    
+    private void StartAutoScroll()
+    {
+        StopAutoScroll();
+        
+        if (AutoScrollMode == AutoScrollMode.DirectPage)
+        {
+            // 直接翻页模式
             _autoPageTimer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(AutoPageInterval)
             };
             _autoPageTimer.Tick += (s, e) => NextPage();
             _autoPageTimer.Start();
-            StatusMessage = $"已开启自动翻页（{AutoPageInterval}秒/页）";
         }
         else
         {
-            _autoPageTimer?.Stop();
-            _autoPageTimer = null;
-            StatusMessage = "已关闭自动翻页";
+            // 平滑滚动模式
+            _autoPageTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(50) // 每50ms触发一次
+            };
+            _autoPageTimer.Tick += OnSmoothScrollTick;
+            _autoPageTimer.Start();
         }
+    }
+    
+    private void StopAutoScroll()
+    {
+        if (_autoPageTimer != null)
+        {
+            _autoPageTimer.Stop();
+            _autoPageTimer = null;
+        }
+    }
+    
+    private void OnSmoothScrollTick(object? sender, EventArgs e)
+    {
+        if (_fullContent.Length == 0 || !IsAutoPageEnabled)
+        {
+            return;
+        }
+        
+        // 根据速度计算每次滚动的字符数
+        // 假设每行约40个字符，行高约为字体大小的1.6倍
+        var charsPerLine = 40;
+        var linesPerSecond = AutoScrollSpeed / (ReaderFontSize * 1.6);
+        var charsPerTick = (int)(charsPerLine * linesPerSecond * 0.05); // 0.05秒一次
+        
+        if (charsPerTick < 1) charsPerTick = 1;
+        
+        var newOffset = Math.Min(CurrentOffset + charsPerTick, Math.Max(TotalLength - 1, 0));
+        if (newOffset >= TotalLength - PageSize)
+        {
+            // 到达末尾，停止滚动
+            StopAutoScroll();
+            IsAutoPageEnabled = false;
+            StatusMessage = "已到达文章末尾，自动滚动已停止";
+            return;
+        }
+        
+        CurrentOffset = newOffset;
+        UpdatePageContent();
+        OnPropertyChanged(nameof(ScrollOffset));
     }
     
     partial void OnAutoPageIntervalChanged(int value)
     {
-        if (_autoPageTimer != null && value >= 3 && value <= 60)
+        if (value < 3) AutoPageInterval = 3;
+        if (value > 300) AutoPageInterval = 300;
+        
+        if (_autoPageTimer != null && IsAutoPageEnabled && AutoScrollMode == AutoScrollMode.DirectPage)
         {
-            _autoPageTimer.Interval = TimeSpan.FromSeconds(value);
+            _autoPageTimer.Interval = TimeSpan.FromSeconds(AutoPageInterval);
+        }
+    }
+    
+    partial void OnAutoScrollModeChanged(AutoScrollMode value)
+    {
+        if (IsAutoPageEnabled)
+        {
+            StartAutoScroll();
+            var modeText = value == AutoScrollMode.DirectPage ? "翻页" : "滚动";
+            StatusMessage = $"已切换到{modeText}模式";
+        }
+    }
+    
+    partial void OnAutoScrollSpeedChanged(int value)
+    {
+        if (value < 10) AutoScrollSpeed = 10;
+        if (value > 500) AutoScrollSpeed = 500;
+        
+        _ = SavePreferencesAsync();
+    }
+    
+    // 用于平滑滚动的偏移量
+    public double ScrollOffset => CurrentOffset;
+    
+    [RelayCommand]
+    private void SetAutoScrollMode(string mode)
+    {
+        AutoScrollMode = mode switch
+        {
+            "DirectPage" => AutoScrollMode.DirectPage,
+            "SmoothScroll" => AutoScrollMode.SmoothScroll,
+            _ => AutoScrollMode.DirectPage
+        };
+    }
+    
+    [RelayCommand]
+    private void IncreaseAutoScrollSpeed()
+    {
+        if (AutoScrollMode == AutoScrollMode.DirectPage)
+        {
+            // 翻页模式：减少间隔时间（加快翻页）
+            AutoPageInterval = Math.Max(3, AutoPageInterval - 2);
+            StatusMessage = $"翻页间隔：{AutoPageInterval}秒";
+        }
+        else
+        {
+            // 滚动模式：增加速度
+            AutoScrollSpeed = Math.Min(500, AutoScrollSpeed + 10);
+            StatusMessage = $"滚动速度：{AutoScrollSpeed}px/s";
+        }
+        
+        // 如果正在自动滚动，重新启动以应用新速度
+        if (IsAutoPageEnabled)
+        {
+            StartAutoScroll();
+        }
+    }
+    
+    [RelayCommand]
+    private void DecreaseAutoScrollSpeed()
+    {
+        if (AutoScrollMode == AutoScrollMode.DirectPage)
+        {
+            // 翻页模式：增加间隔时间（减慢翻页）
+            AutoPageInterval = Math.Min(300, AutoPageInterval + 2);
+            StatusMessage = $"翻页间隔：{AutoPageInterval}秒";
+        }
+        else
+        {
+            // 滚动模式：减少速度
+            AutoScrollSpeed = Math.Max(10, AutoScrollSpeed - 10);
+            StatusMessage = $"滚动速度：{AutoScrollSpeed}px/s";
+        }
+        
+        // 如果正在自动滚动，重新启动以应用新速度
+        if (IsAutoPageEnabled)
+        {
+            StartAutoScroll();
+        }
+    }
+    
+    [RelayCommand]
+    private void OpenAutoScrollSettings()
+    {
+        var window = new Views.AutoScrollSettingsWindow(AutoScrollMode, AutoPageInterval, AutoScrollSpeed)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        
+        if (window.ShowDialog() == true)
+        {
+            AutoScrollMode = window.SelectedMode;
+            AutoPageInterval = window.Interval;
+            AutoScrollSpeed = window.Speed;
+            
+            // 如果正在自动滚动，重新启动以应用新设置
+            if (IsAutoPageEnabled)
+            {
+                StartAutoScroll();
+            }
+            
+            StatusMessage = "自动滚动设置已更新";
         }
     }
     
@@ -1173,69 +1442,6 @@ public partial class MainViewModel : ObservableObject
         {
             StatusMessage = "设置开机自启动失败";
         }
-    }
-    
-    /// <summary>
-    /// 加载偏好设置
-    /// </summary>
-    public async Task LoadPreferencesAsync()
-    {
-        var prefs = await _preferencesService.LoadPreferencesAsync();
-        
-        // 应用设置
-        ReaderFontSize = prefs.FontSize;
-        ReaderLineHeight = prefs.LineHeight;
-        ParagraphSpacing = prefs.ParagraphSpacing;
-        EnableFirstLineIndent = prefs.EnableFirstLineIndent;
-        FirstLineIndent = prefs.FirstLineIndent;
-        ColumnCount = prefs.ColumnCount;
-        PageSize = prefs.PageSize;
-        UseDarkTheme = prefs.UseDarkTheme;
-        IsAutoPageEnabled = prefs.AutoPageEnabled;
-        AutoPageInterval = prefs.AutoPageInterval;
-        IsWindowTopmost = prefs.WindowTopmost;
-        WindowOpacity = prefs.WindowOpacity;
-        IsBorderless = prefs.BorderlessMode;
-        AutoResumeLastBook = prefs.AutoResumeLastBook;
-        HotkeyConfigs = prefs.HotkeyConfigs;
-        IsAutoStartEnabled = _autoStartService.IsAutoStartEnabled();
-        
-        // 应用主题
-        var theme = Themes.FirstOrDefault(t => t.Name == prefs.SelectedThemeName);
-        if (theme != null)
-        {
-            SelectedTheme = theme;
-        }
-    }
-    
-    /// <summary>
-    /// 保存偏好设置
-    /// </summary>
-    public async Task SavePreferencesAsync()
-    {
-        var prefs = new ReadingPreferences
-        {
-            FontSize = ReaderFontSize,
-            LineHeight = ReaderLineHeight,
-            ParagraphSpacing = ParagraphSpacing,
-            EnableFirstLineIndent = EnableFirstLineIndent,
-            FirstLineIndent = FirstLineIndent,
-            ColumnCount = ColumnCount,
-            PageSize = PageSize,
-            SelectedThemeName = SelectedTheme?.Name ?? "日间模式",
-            UseDarkTheme = UseDarkTheme,
-            AutoPageEnabled = IsAutoPageEnabled,
-            AutoPageInterval = AutoPageInterval,
-            ImmersiveModeEnabled = IsImmersiveMode,
-            WindowTopmost = IsWindowTopmost,
-            WindowOpacity = WindowOpacity,
-            BorderlessMode = IsBorderless,
-            AutoResumeLastBook = AutoResumeLastBook,
-            HotkeyConfigs = HotkeyConfigs,
-            AutoStartEnabled = IsAutoStartEnabled
-        };
-        
-        await _preferencesService.SavePreferencesAsync(prefs);
     }
     
     #endregion

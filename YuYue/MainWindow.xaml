@@ -437,12 +437,14 @@
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Center">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
+                                <!-- 第一行：基础控制 -->
                                 <StackPanel Orientation="Horizontal"
-                                            Grid.Row="0">
+                                            Grid.Row="0"
+                                            Margin="0,0,0,4">
                                     <ToggleButton Content="夜间模式"
                                                   Padding="12,4"
                                                   IsChecked="{Binding UseDarkTheme, Mode=TwoWay}">
@@ -637,6 +639,65 @@
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                
+                                <!-- 第二行：高级功能 -->
+                                <StackPanel Orientation="Horizontal"
+                                            Grid.Row="1">
+                                    <ToggleButton Content="⏩自动"
+                                                  Padding="10,4"
+                                                  IsChecked="{Binding IsAutoPageEnabled, Mode=TwoWay}"
+                                                  Command="{Binding ToggleAutoPageCommand}"
+                                                  ToolTip="自动滚动/翻页">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Padding" Value="12,4"/>
+                                                <Setter Property="Margin" Value="8,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
+                                    <Button Content="⚙️"
+                                            Margin="4,0,0,0"
+                                            Padding="8,4"
+                                            Command="{Binding OpenAutoScrollSettingsCommand}"
+                                            ToolTip="自动滚动设置">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Padding" Value="8,4"/>
+                                                <Setter Property="Margin" Value="4,0,0,0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Text="{Binding AutoScrollSpeed, StringFormat='{}{0}px/s'}"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               Foreground="#7F8C8D"
+                                               ToolTip="当前滚动速度">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AutoScrollMode}" Value="DirectPage">
+                                                        <Setter Property="Text" Value="{Binding AutoPageInterval, StringFormat='{}{0}秒/页'}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -1361,6 +1422,48 @@
                                 BorderThickness="0"
                                 Command="{Binding DecreaseFontSizeCommand}"
                                 ToolTip="减小字号"/>
+                        <ToggleButton Content="⏩自动" 
+                                      Padding="8,4" 
+                                      Margin="12,0,4,0"
+                                      Background="#34495E"
+                                      Foreground="White"
+                                      BorderThickness="0"
+                                      IsChecked="{Binding IsAutoPageEnabled, Mode=TwoWay}"
+                                      Command="{Binding ToggleAutoPageCommand}"
+                                      ToolTip="自动滚动/翻页"/>
+                        <Button Content="⚙️" 
+                                Padding="8,4" 
+                                Margin="0,0,4,0"
+                                Background="#34495E"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Command="{Binding OpenAutoScrollSettingsCommand}"
+                                ToolTip="滚动设置"/>
+                        <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
+                            <TextBlock Text="速度" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Button Content="-" 
+                                    Padding="6,2" 
+                                    Margin="0,0,4,0"
+                                    Background="#34495E"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Command="{Binding DecreaseAutoScrollSpeedCommand}"
+                                    ToolTip="减速"/>
+                            <TextBlock Text="{Binding AutoScrollSpeed, StringFormat='{}{0}'}" 
+                                       Foreground="White" 
+                                       VerticalAlignment="Center"
+                                       MinWidth="30"
+                                       TextAlignment="Center"
+                                       Margin="4,0"/>
+                            <Button Content="+" 
+                                    Padding="6,2" 
+                                    Margin="4,0,0,0"
+                                    Background="#34495E"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Command="{Binding IncreaseAutoScrollSpeedCommand}"
+                                    ToolTip="加速"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
                             <TextBlock Text="透明度" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <Slider Width="100" 

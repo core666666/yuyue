@@ -25,9 +25,11 @@ public class ReadingPreferences
     // 自定义主题
     public CustomTheme? CustomTheme { get; set; }
     
-    // 自动翻页
+    // 自动翻页/滚动
     public bool AutoPageEnabled { get; set; } = false;
     public int AutoPageInterval { get; set; } = 10;
+    public AutoScrollMode AutoScrollMode { get; set; } = AutoScrollMode.DirectPage;
+    public int AutoScrollSpeed { get; set; } = 50; // 滚动速度（像素/秒）
     
     // 界面设置
     public bool ImmersiveModeEnabled { get; set; } = false;
@@ -83,6 +85,17 @@ public class KeyBindings
     public string ToggleTimer { get; set; } = "Ctrl+P";
     public string SaveProgress { get; set; } = "Ctrl+S";
     public string BackToBookshelf { get; set; } = "Escape";
+}
+
+/// <summary>
+/// 自动滚动模式
+/// </summary>
+public enum AutoScrollMode
+{
+    /// <summary>直接翻页</summary>
+    DirectPage,
+    /// <summary>平滑滚动</summary>
+    SmoothScroll
 }
 
 /// <summary>

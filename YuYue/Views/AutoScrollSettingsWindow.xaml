@@ -1,0 +1,158 @@
+<Window x:Class="YuYue.Views.AutoScrollSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:YuYue.Models"
+        Title="自动滚动设置" 
+        Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F8F9FA">
+    
+    <Window.Resources>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#2C3E50"/>
+            <Setter Property="Margin" Value="0,16,0,8"/>
+        </Style>
+        
+        <Style x:Key="DescText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#7F8C8D"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        
+        <Style x:Key="RadioStyle" TargetType="RadioButton">
+            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 标题 -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="⏩ 自动滚动/翻页设置" 
+                       FontSize="20" FontWeight="Bold" 
+                       Foreground="#2C3E50"/>
+            <TextBlock Text="配置自动阅读的方式和速度" 
+                       Style="{StaticResource DescText}"/>
+        </StackPanel>
+        
+        <!-- 设置内容 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+            <StackPanel>
+                
+                <!-- 滚动模式 -->
+                <TextBlock Text="滚动模式" Style="{StaticResource SectionTitle}"/>
+                <Border Background="White" Padding="16" CornerRadius="6" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <StackPanel>
+                        <RadioButton x:Name="RadioDirectPage"
+                                     Content="直接翻页" 
+                                     GroupName="ScrollMode"
+                                     Style="{StaticResource RadioStyle}"
+                                     IsChecked="True"/>
+                        <TextBlock Text="每隔指定时间直接翻到下一页，适合快速阅读"
+                                   Style="{StaticResource DescText}" Margin="24,4,0,0"/>
+                        
+                        <RadioButton x:Name="RadioSmoothScroll"
+                                     Content="平滑滚动" 
+                                     GroupName="ScrollMode"
+                                     Style="{StaticResource RadioStyle}"
+                                     Margin="0,12,0,0"/>
+                        <TextBlock Text="内容平滑向上滚动，阅读体验更流畅"
+                                   Style="{StaticResource DescText}" Margin="24,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- 翻页间隔 -->
+                <TextBlock Text="翻页间隔（秒）" Style="{StaticResource SectionTitle}"/>
+                <Border Background="White" Padding="16" CornerRadius="6" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="SliderInterval"
+                                    Grid.Column="0"
+                                    Minimum="3" Maximum="300" 
+                                    Value="10"
+                                    TickFrequency="1" 
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding ElementName=SliderInterval, Path=Value, StringFormat='{}{0:F0} 秒'}"
+                                       FontSize="16" FontWeight="Bold"
+                                       Foreground="#3498DB"
+                                       Margin="16,0,0,0"
+                                       VerticalAlignment="Center"
+                                       MinWidth="60"/>
+                        </Grid>
+                        <TextBlock Text="适用于直接翻页模式，设置每页停留的时间"
+                                   Style="{StaticResource DescText}"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- 滚动速度 -->
+                <TextBlock Text="滚动速度（像素/秒）" Style="{StaticResource SectionTitle}"/>
+                <Border Background="White" Padding="16" CornerRadius="6" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="SliderSpeed"
+                                    Grid.Column="0"
+                                    Minimum="10" Maximum="500" 
+                                    Value="50"
+                                    TickFrequency="10" 
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding ElementName=SliderSpeed, Path=Value, StringFormat='{}{0:F0} px/s'}"
+                                       FontSize="16" FontWeight="Bold"
+                                       Foreground="#3498DB"
+                                       Margin="16,0,0,0"
+                                       VerticalAlignment="Center"
+                                       MinWidth="80"/>
+                        </Grid>
+                        <TextBlock Text="适用于平滑滚动模式，数值越大滚动越快"
+                                   Style="{StaticResource DescText}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="慢速 (30)" Click="SetSpeed_Click" Tag="30" 
+                                    Padding="8,4" Margin="0,0,8,0"/>
+                            <Button Content="中速 (50)" Click="SetSpeed_Click" Tag="50"
+                                    Padding="8,4" Margin="0,0,8,0"/>
+                            <Button Content="快速 (100)" Click="SetSpeed_Click" Tag="100"
+                                    Padding="8,4" Margin="0,0,8,0"/>
+                            <Button Content="极速 (200)" Click="SetSpeed_Click" Tag="200"
+                                    Padding="8,4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- 底部按钮 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="确定" Click="OK_Click" 
+                    Width="100" Height="36" Margin="0,0,12,0"
+                    Background="#3498DB" Foreground="White"
+                    BorderThickness="0" Cursor="Hand"/>
+            <Button Content="取消" Click="Cancel_Click"
+                    Width="100" Height="36"
+                    Background="#ECF0F1" Foreground="#2C3E50"
+                    BorderThickness="0" Cursor="Hand"/>
+        </StackPanel>
+    </Grid>
+</Window>

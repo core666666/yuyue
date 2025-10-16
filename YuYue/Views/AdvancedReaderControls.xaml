@@ -84,6 +84,11 @@
                     <ToggleButton Content="⏩ 自动翻页" 
                                   IsChecked="{Binding IsAutoPageEnabled}"
                                   Padding="10,6" Margin="4,0"/>
+                    <Button Content="⚙️" 
+                            Command="{Binding OpenAutoScrollSettingsCommand}"
+                            ToolTip="自动滚动设置"
+                            Padding="10,6" Margin="4,0"
+                            Style="{StaticResource ToolButton}"/>
                 </StackPanel>
             </Grid>
         </Border>
