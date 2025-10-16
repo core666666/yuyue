@@ -8,8 +8,8 @@
         Title="鱼阅 - 碎片化阅读器"
         Height="720"
         Width="1200"
-        MinHeight="600"
-        MinWidth="900"
+        MinHeight="300"
+        MinWidth="400"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -708,8 +708,9 @@
 
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*" MinWidth="200"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="280" MinWidth="150" MaxWidth="500"/>
                             </Grid.ColumnDefinitions>
                             
                             <!-- 阅读内容区域 -->
@@ -744,9 +745,29 @@
                                 </ScrollViewer>
                             </Border>
                             
+                            <!-- GridSplitter 用于调整阅读区域和侧边面板的宽度 -->
+                            <GridSplitter x:Name="ReaderGridSplitter"
+                                          Grid.Column="1"
+                                          Width="5"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Stretch"
+                                          Background="Transparent"
+                                          ShowsPreview="False">
+                                <GridSplitter.Style>
+                                    <Style TargetType="GridSplitter">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCamouflageMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </GridSplitter.Style>
+                            </GridSplitter>
+                            
                             <!-- 侧边面板区域 -->
                             <StackPanel x:Name="ReaderSidePanel"
-                                        Grid.Column="1" Width="280" Margin="4,0,0,0">
+                                        Grid.Column="2" Margin="4,0,0,0">
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Visible"/>

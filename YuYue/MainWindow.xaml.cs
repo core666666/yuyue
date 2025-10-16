@@ -52,6 +52,11 @@ public partial class MainWindow : Window
     private CamouflageWindow? _camouflageWindow;
     private WindowState _stateBeforeCamouflage;
     private System.Windows.Threading.DispatcherTimer? _borderlessHideTimer;
+    
+    // 保存无边框模式前的窗口尺寸
+    private double _widthBeforeBorderless;
+    private double _heightBeforeBorderless;
+    private WindowState _stateBeforeBorderless;
 
     public ICommand HideToTrayCommand { get; }
 
@@ -244,6 +249,11 @@ public partial class MainWindow : Window
     {
         if (_viewModel.IsBorderless)
         {
+            // 保存当前窗口尺寸和状态
+            _widthBeforeBorderless = ActualWidth;
+            _heightBeforeBorderless = ActualHeight;
+            _stateBeforeBorderless = WindowState;
+            
             // 无边框模式：背景全透明，只显示文字内容
             // 注意：AllowsTransparency 和 WindowStyle 在 XAML 中已设置，不能在运行时更改
             ResizeMode = ResizeMode.CanResizeWithGrip; // 允许调整窗口大小
@@ -256,6 +266,7 @@ public partial class MainWindow : Window
             StatusBarBorder.Visibility = Visibility.Collapsed;
             ReaderTopBar.Visibility = Visibility.Collapsed;
             ReaderSidePanel.Visibility = Visibility.Collapsed;
+            ReaderGridSplitter.Visibility = Visibility.Collapsed;
             
             // 主容器完全透明
             MainBorder.CornerRadius = new CornerRadius(0);
@@ -300,6 +311,15 @@ public partial class MainWindow : Window
             // 有边框模式：显示所有UI元素
             ResizeMode = ResizeMode.CanResize;
             
+            // 恢复窗口尺寸和状态
+            if (_widthBeforeBorderless > 0 && _heightBeforeBorderless > 0)
+            {
+                // 确保恢复的尺寸不小于有边框模式的最小尺寸
+                Width = Math.Max(_widthBeforeBorderless, 800);
+                Height = Math.Max(_heightBeforeBorderless, 500);
+                WindowState = _stateBeforeBorderless;
+            }
+            
             if (_originalBackground is not null)
             {
                 Background = _originalBackground;
@@ -316,6 +336,7 @@ public partial class MainWindow : Window
             StatusBarBorder.Visibility = Visibility.Visible;
             ReaderTopBar.Visibility = Visibility.Visible;
             ReaderSidePanel.Visibility = Visibility.Visible;
+            ReaderGridSplitter.Visibility = Visibility.Visible;
             
             // 恢复正常样式
             MainBorder.CornerRadius = new CornerRadius(12);
