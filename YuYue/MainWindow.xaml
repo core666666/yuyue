@@ -261,11 +261,13 @@
                 </Border>
 
                 <!-- Divider -->
-                <Border Grid.Column="1"
+                <Border x:Name="DividerBorder"
+                        Grid.Column="1"
                         Background="#E0E6ED"/>
 
                 <!-- Main Panels -->
-                <Border Grid.Column="2"
+                <Border x:Name="MainContentBorder"
+                        Grid.Column="2"
                         Background="White"
                         Padding="24"
                         Margin="0,0,12,12"
@@ -360,7 +362,8 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid x:Name="ReaderTopBar"
+                              Grid.Row="0" Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition Width="Auto"/>
@@ -701,7 +704,8 @@
                             </Grid.ColumnDefinitions>
                             
                             <!-- 阅读内容区域 -->
-                            <Border Grid.Column="0"
+                            <Border x:Name="ReaderContentBorder"
+                                    Grid.Column="0"
                                     Background="{Binding CurrentBackground}"
                                     BorderBrush="#E0E6ED"
                                     BorderThickness="1"
@@ -717,18 +721,23 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <ScrollViewer x:Name="ReaderScrollViewer" VerticalScrollBarVisibility="Auto">
-                                    <TextBlock Text="{Binding PageContent}"
+                                <ScrollViewer x:Name="ReaderScrollViewer" 
+                                              VerticalScrollBarVisibility="Auto"
+                                              Background="Transparent">
+                                    <TextBlock x:Name="ReaderTextBlock"
+                                               Text="{Binding PageContent}"
                                                FontSize="{Binding ReaderFontSize}"
                                                Foreground="{Binding CurrentForeground}"
                                                TextWrapping="Wrap"
                                                LineHeight="{Binding ReaderLineHeight}"
-                                               Padding="24"/>
+                                               Padding="24"
+                                               Background="Transparent"/>
                                 </ScrollViewer>
                             </Border>
                             
                             <!-- 侧边面板区域 -->
-                            <StackPanel Grid.Column="1" Width="280" Margin="4,0,0,0">
+                            <StackPanel x:Name="ReaderSidePanel"
+                                        Grid.Column="1" Width="280" Margin="4,0,0,0">
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Visible"/>

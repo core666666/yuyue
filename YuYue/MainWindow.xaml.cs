@@ -223,19 +223,42 @@ public partial class MainWindow : Window
     {
         if (_viewModel.IsBorderless)
         {
-            // 无边框模式：只显示内容，隐藏标题栏和边框
+            // 无边框模式：背景全透明，只显示文字内容
             // 注意：AllowsTransparency 和 WindowStyle 在 XAML 中已设置，不能在运行时更改
             ResizeMode = ResizeMode.NoResize;
             Background = System.Windows.Media.Brushes.Transparent;
             Effect = null;
             
-            // 隐藏标题栏和侧边栏
+            // 隐藏所有UI元素
             TitleBarBorder.Visibility = Visibility.Collapsed;
             LeftMenuBorder.Visibility = Visibility.Collapsed;
             StatusBarBorder.Visibility = Visibility.Collapsed;
+            ReaderTopBar.Visibility = Visibility.Collapsed;
+            ReaderSidePanel.Visibility = Visibility.Collapsed;
+            
+            // 主容器完全透明
             MainBorder.CornerRadius = new CornerRadius(0);
             MainBorder.BorderThickness = new Thickness(0);
             MainBorder.Background = System.Windows.Media.Brushes.Transparent;
+            
+            // 分隔线也透明
+            DividerBorder.Visibility = Visibility.Collapsed;
+            
+            // 主内容区域透明
+            MainContentBorder.Background = System.Windows.Media.Brushes.Transparent;
+            MainContentBorder.Padding = new Thickness(0);
+            MainContentBorder.Margin = new Thickness(0);
+            
+            // 阅读内容区域也透明，只显示文字
+            // 先清除绑定，再设置透明背景
+            System.Windows.Data.BindingOperations.ClearBinding(ReaderContentBorder, System.Windows.Controls.Border.BackgroundProperty);
+            ReaderContentBorder.Background = System.Windows.Media.Brushes.Transparent;
+            ReaderContentBorder.BorderThickness = new Thickness(0);
+            ReaderContentBorder.Margin = new Thickness(0);
+            
+            // ScrollViewer 和 TextBlock 也设置为透明
+            ReaderScrollViewer.Background = System.Windows.Media.Brushes.Transparent;
+            ReaderTextBlock.Background = System.Windows.Media.Brushes.Transparent;
             
             // 显示无边框控制面板（初始隐藏，鼠标悬浮显示）
             BorderlessControlPanel.Visibility = Visibility.Collapsed;
@@ -255,13 +278,35 @@ public partial class MainWindow : Window
                 Effect = _cachedShadowEffect;
             }
             
-            // 显示标题栏和侧边栏
+            // 显示所有UI元素
             TitleBarBorder.Visibility = Visibility.Visible;
             LeftMenuBorder.Visibility = Visibility.Visible;
             StatusBarBorder.Visibility = Visibility.Visible;
+            ReaderTopBar.Visibility = Visibility.Visible;
+            ReaderSidePanel.Visibility = Visibility.Visible;
+            
+            // 恢复正常样式
             MainBorder.CornerRadius = new CornerRadius(12);
             MainBorder.BorderThickness = new Thickness(1);
             MainBorder.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF5, 0xF7, 0xFA));
+            
+            // 恢复分隔线
+            DividerBorder.Visibility = Visibility.Visible;
+            
+            // 恢复主内容区域
+            MainContentBorder.Background = System.Windows.Media.Brushes.White;
+            MainContentBorder.Padding = new Thickness(24);
+            MainContentBorder.Margin = new Thickness(0, 0, 12, 12);
+            
+            // 恢复阅读区域背景（重新绑定到 CurrentBackground）
+            var backgroundBinding = new System.Windows.Data.Binding("CurrentBackground");
+            ReaderContentBorder.SetBinding(System.Windows.Controls.Border.BackgroundProperty, backgroundBinding);
+            ReaderContentBorder.BorderThickness = new Thickness(1);
+            ReaderContentBorder.Margin = new Thickness(0, 0, 4, 0);
+            
+            // 恢复 ScrollViewer 和 TextBlock 背景
+            ReaderScrollViewer.ClearValue(System.Windows.Controls.ScrollViewer.BackgroundProperty);
+            ReaderTextBlock.ClearValue(System.Windows.Controls.TextBlock.BackgroundProperty);
             
             // 隐藏无边框控制面板
             BorderlessControlPanel.Visibility = Visibility.Collapsed;
