@@ -136,7 +136,10 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isBorderless = true;
-    
+
+    [ObservableProperty]
+    private bool isHoverDisplayEnabled = false;
+
     // 高级阅读功能
     [ObservableProperty]
     private bool isImmersiveMode;
@@ -350,6 +353,12 @@ public partial class MainViewModel : ObservableObject
     partial void OnIsBorderlessChanged(bool value)
     {
         StatusMessage = value ? "已启用无边框模式。" : "已切换为系统边框。";
+    }
+
+    partial void OnIsHoverDisplayEnabledChanged(bool value)
+    {
+        StatusMessage = value ? "已启用悬浮显示内容。" : "已关闭悬浮显示内容。";
+        _ = SavePreferencesAsync();
     }
 
     #endregion
@@ -880,6 +889,7 @@ public partial class MainViewModel : ObservableObject
             IsWindowTopmost = prefs.WindowTopmost;
             WindowOpacity = prefs.WindowOpacity;
             IsBorderless = prefs.BorderlessMode;
+            IsHoverDisplayEnabled = prefs.HoverDisplayEnabled;
             IsAutoStartEnabled = prefs.AutoStartEnabled;
             IsAutoPageEnabled = prefs.AutoPageEnabled;
             
@@ -923,6 +933,7 @@ public partial class MainViewModel : ObservableObject
                 WindowTopmost = IsWindowTopmost,
                 WindowOpacity = WindowOpacity,
                 BorderlessMode = IsBorderless,
+                HoverDisplayEnabled = IsHoverDisplayEnabled,
                 AutoStartEnabled = IsAutoStartEnabled,
                 AutoPageEnabled = IsAutoPageEnabled,
                 AutoPageInterval = AutoPageInterval,

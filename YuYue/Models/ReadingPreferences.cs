@@ -41,6 +41,7 @@ public class ReadingPreferences
     public bool WindowTopmost { get; set; } = false;
     public double WindowOpacity { get; set; } = 0.95;
     public bool BorderlessMode { get; set; } = true;
+    public bool HoverDisplayEnabled { get; set; } = false;
     
     // 阅读习惯
     public bool AutoResumeLastBook { get; set; } = true;

@@ -122,7 +122,7 @@
             BorderBrush="#E0E6ED"
             MouseMove="MainWindow_MouseMove"
             MouseLeftButtonDown="MainWindow_MouseLeftButtonDown">
-        <Grid>
+        <Grid Background="Transparent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>
                 <RowDefinition Height="*"/>
@@ -764,11 +764,13 @@
                             <!-- 阅读内容区域 -->
                             <Border x:Name="ReaderContentBorder"
                                     Grid.Column="0"
-                                    Background="{Binding CurrentBackground}"
+                                    Background="Transparent"
                                     BorderBrush="#E0E6ED"
                                     BorderThickness="1"
                                     CornerRadius="6"
-                                    Margin="0,0,4,0">
+                                    Margin="0,0,4,0"
+                                    MouseEnter="ReaderContentBorder_MouseEnter"
+                                    MouseLeave="ReaderContentBorder_MouseLeave">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Visibility" Value="Visible"/>
@@ -779,24 +781,38 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <ScrollViewer x:Name="ReaderScrollViewer" 
-                                              VerticalScrollBarVisibility="Auto"
-                                              Background="Transparent"
-                                              CanContentScroll="False">
-                                    <TextBlock x:Name="ReaderTextBlock"
-                                               Text="{Binding PageContent}"
-                                               FontSize="{Binding ReaderFontSize}"
-                                               Foreground="{Binding CurrentForeground}"
-                                               TextWrapping="Wrap"
-                                               LineHeight="{Binding ReaderLineHeight}"
-                                               Padding="24"
-                                               Background="Transparent"
+                                <Border x:Name="ReaderBackgroundBorder">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{Binding CurrentBackground, TargetNullValue=White}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsBorderless}" Value="True">
+                                                    <Setter Property="Background" Value="#01FFFFFF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <ScrollViewer x:Name="ReaderScrollViewer" 
+                                                  VerticalScrollBarVisibility="Auto"
+                                                  Background="Transparent"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Stretch"
+                                                  CanContentScroll="False">
+                                        <TextBlock x:Name="ReaderTextBlock"
+                                                   Text="{Binding PageContent}"
+                                                   FontSize="{Binding ReaderFontSize}"
+                                                   Foreground="{Binding CurrentForeground}"
+                                                   TextWrapping="Wrap"
+                                                   LineHeight="{Binding ReaderLineHeight}"
+                                                   Padding="24"
+                                                   Background="Transparent"
                                                TextOptions.TextFormattingMode="Display"
                                                TextOptions.TextRenderingMode="ClearType"
                                                TextOptions.TextHintingMode="Fixed"
                                                UseLayoutRounding="True"
                                                SnapsToDevicePixels="True"/>
-                                </ScrollViewer>
+                                    </ScrollViewer>
+                                </Border>
                             </Border>
                             
                             <!-- GridSplitter 用于调整阅读区域和侧边面板的宽度 -->
@@ -1469,8 +1485,13 @@
                     
                     <!-- 右侧：窗口控制 -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <CheckBox Content="置顶" 
-                                  Foreground="White" 
+                        <CheckBox Content="悬浮显示内容"
+                                  Foreground="White"
+                                  Margin="8,0"
+                                  IsChecked="{Binding IsHoverDisplayEnabled, Mode=TwoWay}"
+                                  ToolTip="开启后，鼠标离开内容区域时隐藏内容并停止自动阅读"/>
+                        <CheckBox Content="置顶"
+                                  Foreground="White"
                                   Margin="8,0"
                                   IsChecked="{Binding IsWindowTopmost, Mode=TwoWay}"/>
                         <Button Content="退出无边框" 

@@ -65,6 +65,10 @@ public partial class MainWindow : Window
     // 累积的滚动偏移量（用于支持低速滚动）
     private double _accumulatedScrollOffset;
 
+    // 悬浮显示相关
+    private bool _wasAutoScrollingBeforeHide;
+    private bool _isContentHidden;
+
     public ICommand HideToTrayCommand { get; }
 
     public MainWindow()
@@ -193,6 +197,16 @@ public partial class MainWindow : Window
                 ApplyBorderless();
                 // 切换无边框模式后，更新滚动条状态
                 HandleAutoScrollModeChanged();
+                // 重置悬浮显示状态
+                ResetHoverDisplayState();
+            });
+        }
+        else if (e.PropertyName == nameof(MainViewModel.IsHoverDisplayEnabled))
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // 悬浮显示功能开关变化时重置状态
+                ResetHoverDisplayState();
             });
         }
         else if (e.PropertyName == nameof(MainViewModel.IsCamouflageMode))
@@ -415,10 +429,10 @@ public partial class MainWindow : Window
             // 获取鼠标位置
             System.Windows.Point position = e.GetPosition(this);
             int resizeDirection = GetResizeDirection(position);
-            
+
             // 更新鼠标光标
             Cursor = GetResizeCursor(resizeDirection);
-            
+
             // 鼠标移动时显示控制面板和底部导航按钮
             BorderlessControlPanel.Visibility = Visibility.Visible;
             // 左侧菜单在无边框模式下始终隐藏，不显示
@@ -426,7 +440,10 @@ public partial class MainWindow : Window
             {
                 ReaderBottomNav.Visibility = Visibility.Visible;
             }
-            
+
+            // 处理悬浮显示逻辑
+            HandleHoverDisplay(position);
+
             // 重置隐藏计时器
             _borderlessHideTimer?.Stop();
             _borderlessHideTimer?.Start();
@@ -709,5 +726,170 @@ public partial class MainWindow : Window
             WMSZ_TOPRIGHT or WMSZ_BOTTOMLEFT => System.Windows.Input.Cursors.SizeNESW,
             _ => System.Windows.Input.Cursors.Arrow
         };
+    }
+
+
+    private void ShowReaderContent()
+    {
+        if (ReaderContentBorder != null)
+        {
+            // 确保元素可见（不是Collapsed），然后设置透明度
+            if (ReaderContentBorder.Visibility != Visibility.Visible)
+            {
+                ReaderContentBorder.Visibility = Visibility.Visible;
+            }
+            // 确保有背景以响应鼠标事件
+            if (ReaderContentBorder.Background == null)
+            {
+                ReaderContentBorder.Background = System.Windows.Media.Brushes.Transparent;
+            }
+            ReaderContentBorder.Opacity = 1.0;
+        }
+    }
+
+    private void HideReaderContent()
+    {
+        if (ReaderContentBorder != null)
+        {
+            // 确保有背景以响应鼠标事件
+            if (ReaderContentBorder.Background == null)
+            {
+                ReaderContentBorder.Background = System.Windows.Media.Brushes.Transparent;
+            }
+            // 设置透明度为一个非常小的值（而不是0），确保元素仍然能响应鼠标事件
+            // 0.01的透明度几乎看不见，但足以让WPF保持鼠标事件响应
+            ReaderContentBorder.Opacity = 0.01;
+        }
+    }
+
+    private void ReaderContentBorder_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (_viewModel.IsBorderless && _viewModel.IsHoverDisplayEnabled && _isContentHidden)
+        {
+            // 鼠标进入内容区域，显示内容
+            ShowReaderContent();
+            if (_wasAutoScrollingBeforeHide)
+            {
+                _viewModel.IsAutoPageEnabled = true;
+                _wasAutoScrollingBeforeHide = false;
+            }
+            _isContentHidden = false;
+            _viewModel.StatusMessage = "内容已显示（MouseEnter）";
+        }
+    }
+
+    private void ReaderContentBorder_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (_viewModel.IsBorderless && _viewModel.IsHoverDisplayEnabled && !_isContentHidden)
+        {
+            // 鼠标离开内容区域，隐藏内容
+            if (_viewModel.IsAutoPageEnabled)
+            {
+                _wasAutoScrollingBeforeHide = true;
+                _viewModel.IsAutoPageEnabled = false;
+            }
+            HideReaderContent();
+            _isContentHidden = true;
+            _viewModel.StatusMessage = "内容已隐藏（MouseLeave）";
+        }
+    }
+
+    private void HandleHoverDisplay(System.Windows.Point mousePosition)
+    {
+        // 只在启用悬浮显示功能时处理
+        if (!_viewModel.IsHoverDisplayEnabled)
+            return;
+
+        try
+        {
+            // 检查ReaderContentBorder是否存在且可用
+            if (ReaderContentBorder == null)
+            {
+                _viewModel.StatusMessage = "ReaderContentBorder 为 null";
+                return;
+            }
+
+            var borderVisibility = ReaderContentBorder.Visibility;
+            var borderOpacity = ReaderContentBorder.Opacity;
+
+            // 在无边框模式下，使用更简单的区域判断
+            // 假设内容区域占据窗口的主要部分，排除顶部控制面板和边缘
+            var windowWidth = this.ActualWidth;
+            var windowHeight = this.ActualHeight;
+
+            // 定义内容区域：排除顶部控制面板区域（高度约40px）和窗口边缘
+            var contentLeft = 20.0;
+            var contentTop = 50.0;  // 为顶部控制面板留出空间
+            var contentRight = windowWidth - 20.0;
+            var contentBottom = windowHeight - 20.0;
+
+            bool isMouseOverContent = mousePosition.X >= contentLeft &&
+                                     mousePosition.X <= contentRight &&
+                                     mousePosition.Y >= contentTop &&
+                                     mousePosition.Y <= contentBottom;
+
+            // 调试信息
+            _viewModel.StatusMessage = $"鼠标: ({mousePosition.X:F0},{mousePosition.Y:F0}), 区域: ({contentLeft:F0},{contentTop:F0})-({contentRight:F0},{contentBottom:F0}), 在区域内: {isMouseOverContent}, 隐藏: {_isContentHidden}, Vis: {borderVisibility}, Opa: {borderOpacity:F1}";
+
+            if (isMouseOverContent && _isContentHidden)
+            {
+                // 鼠标移入内容区域，显示内容
+                ShowReaderContent();
+                if (_wasAutoScrollingBeforeHide)
+                {
+                    _viewModel.IsAutoPageEnabled = true;
+                    _wasAutoScrollingBeforeHide = false;
+                }
+                _isContentHidden = false;
+                _viewModel.StatusMessage = "内容已显示";
+            }
+            else if (!isMouseOverContent && !_isContentHidden)
+            {
+                // 鼠标移出内容区域，隐藏内容
+                if (_viewModel.IsAutoPageEnabled)
+                {
+                    _wasAutoScrollingBeforeHide = true;
+                    _viewModel.IsAutoPageEnabled = false;
+                }
+                HideReaderContent();
+                _isContentHidden = true;
+                _viewModel.StatusMessage = "内容已隐藏";
+            }
+        }
+        catch (Exception ex)
+        {
+            _viewModel.StatusMessage = $"悬浮显示错误: {ex.Message}";
+        }
+    }
+
+    private void ResetHoverDisplayState()
+    {
+        // 重置悬浮显示相关状态
+        _wasAutoScrollingBeforeHide = false;
+        _isContentHidden = false;
+
+        if (_viewModel.IsBorderless && _viewModel.IsHoverDisplayEnabled)
+        {
+            // 在悬浮显示模式下，确保ReaderContentBorder有背景以响应鼠标事件
+            if (ReaderContentBorder != null)
+            {
+                // 保存原始背景（如果需要恢复）
+                if (ReaderContentBorder.Background == null || 
+                    ReaderContentBorder.ReadLocalValue(Border.BackgroundProperty) == System.Windows.DependencyProperty.UnsetValue)
+                {
+                    ReaderContentBorder.Background = System.Windows.Media.Brushes.Transparent;
+                }
+            }
+            
+            // 如果开启了悬浮显示，默认先隐藏内容
+            HideReaderContent();
+            _isContentHidden = true;
+            _viewModel.StatusMessage = "悬浮显示已启用，请将鼠标移到内容区域";
+        }
+        else
+        {
+            // 如果未开启悬浮显示，确保内容可见
+            ShowReaderContent();
+        }
     }
 }
